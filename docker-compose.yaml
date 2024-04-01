@@ -1,0 +1,14 @@
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: backend/db.dockerfile
+    image: "databases_project_db"
+    container_name: db
+    environment:
+      POSTGRES_DB: databases
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
