@@ -4,10 +4,10 @@ go 1.22.0
 
 require (
 	github.com/alexedwards/flow v0.1.0
-	github.com/jackc/pgx/v5 v5.5.1
-	github.com/lmittmann/tint v1.0.3
+	github.com/jackc/pgx/v5 v5.5.5
+	github.com/lmittmann/tint v1.0.4
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
-	golang.org/x/exp v0.0.0-20231127185646-65229373498e
+	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8
 )
 
 require (
