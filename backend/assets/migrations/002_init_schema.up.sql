@@ -60,12 +60,12 @@ CREATE TABLE IF NOT EXISTS "airplanes" (
 
 CREATE TABLE IF NOT EXISTS "flights" (
   "flight_id" INT PRIMARY KEY,
-  "departure_airport" VARCHAR(3),
-  "arrival_airport" VARCHAR(3),
-  "departure_datetime" TIMESTAMP,
-  "arrival_datetime" TIMESTAMP,
+  "departure_airport" VARCHAR(3) NOT NULL,
+  "arrival_airport" VARCHAR(3) NOT NULL,
+  "departure_datetime" TIMESTAMP NOT NULL,
+  "arrival_datetime" TIMESTAMP NOT NULL,
   "airplane_id" INT,
-  "price" DECIMAL(10,2)
+  "price" DECIMAL(10,2) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "customers" (
@@ -94,9 +94,10 @@ CREATE TABLE IF NOT EXISTS "seats_flights" (
 
 CREATE TABLE IF NOT EXISTS "seats" (
   "seat_id" INT PRIMARY KEY,
-  "airplane_id" INT,
-  "seat_number" VARCHAR(10) NOT NULL,
-  "seat_type" seat_class
+  "airplane_id" INT NOT NULL,
+  "seat_type" seat_class NOT NULL,
+  "row" INT NOT NULL,
+  "column" INT NOT NULL
 );
 
 SELECT add_foreign_key_if_not_exists('flights', 'departure_airport', 'airports', 'airport_code');
