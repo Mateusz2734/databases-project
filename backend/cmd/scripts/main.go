@@ -1,49 +1,64 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
+	"slices"
+	"strings"
 
-	"github.com/Mateusz2734/wdai-project/backend/assets"
+	"github.com/Mateusz2734/databases-project/backend/assets"
+	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
 )
 
-type PlaneMetadata struct {
-	Rows      int
-	Columns   int
-	SeatTypes map[string]struct {
-		SeatRows []int
+func getFileBeginning(table string) string {
+	var insert string
+	if table == "airplanes" {
+		insert = "airplanes(airplane_model, diagram_metadata)"
+	} else if table == "seats" {
+		insert = "seats(airplane_id, seat_type, row, \"column\")"
 	}
-	DisabledSeats []struct {
-		Row int
-		Col int
-	}
+	return "DO $$\nBEGIN\n\tIF (SELECT COUNT(*) FROM " + table + ") = 0 THEN\n\t\tINSERT INTO " + insert + " VALUES\n"
 }
 
-func (meta PlaneMetadata) constructClassMap() map[int]string {
-	classMap := make(map[int]string, meta.Rows)
-
-	for key, val := range meta.SeatTypes {
-		for _, innerVal := range val.SeatRows {
-			classMap[innerVal] = key
+func generatePlanesSQL(keys []string, planes map[string]string) string {
+	builder := strings.Builder{}
+	for i, name := range keys {
+		metadata := planes[name]
+		builder.WriteString("\t\t('" + name + "', '" + metadata + "')")
+		if i == (len(keys) - 1) {
+			builder.WriteString(";")
+		} else {
+			builder.WriteString(",\n")
 		}
 	}
 
-	for i := 0; i < meta.Rows; i++ {
-		_, exists := classMap[i]
-		if !exists {
-			classMap[i] = "economy"
-		}
-	}
-
-	return classMap
+	return builder.String()
 }
 
-var test = `{"rows":44,"columns":9,"seatTypes":{"default":{"label":"Economy","cssClass":"economy","price":150},"first":{"label":"Business","cssClass":"business","price":1200,"seatRows":[0,1,2,3,4,5,6,7,8,9,10]},"economy_plus":{"label":"Economy Plus","cssClass":"economy-plus","price":300,"seatRows":[11,12,13,14,15,16,17,18]}},"disabledSeats":[{"row":0,"col":0},{"row":0,"col":2},{"row":0,"col":4},{"row":0,"col":6},{"row":0,"col":8},{"row":1,"col":0},{"row":1,"col":2},{"row":1,"col":4},{"row":1,"col":6},{"row":1,"col":8},{"row":2,"col":0},{"row":2,"col":2},{"row":2,"col":4},{"row":2,"col":6},{"row":2,"col":8},{"row":3,"col":0},{"row":3,"col":2},{"row":3,"col":4},{"row":3,"col":6},{"row":3,"col":8},{"row":4,"col":0},{"row":4,"col":2},{"row":4,"col":4},{"row":4,"col":6},{"row":4,"col":8},{"row":5,"col":0},{"row":5,"col":2},{"row":5,"col":4},{"row":5,"col":6},{"row":5,"col":8},{"row":6,"col":0},{"row":6,"col":2},{"row":6,"col":4},{"row":6,"col":6},{"row":6,"col":8},{"row":7,"col":0},{"row":7,"col":2},{"row":7,"col":4},{"row":7,"col":6},{"row":7,"col":8},{"row":8,"col":0},{"row":8,"col":2},{"row":8,"col":4},{"row":8,"col":6},{"row":8,"col":8},{"row":9,"col":0},{"row":9,"col":2},{"row":9,"col":4},{"row":9,"col":6},{"row":9,"col":8},{"row":10,"col":0},{"row":10,"col":2},{"row":10,"col":4},{"row":10,"col":6},{"row":10,"col":8},{"row":11,"col":2},{"row":11,"col":6},{"row":12,"col":2},{"row":12,"col":6},{"row":13,"col":2},{"row":13,"col":6},{"row":24,"col":3},{"row":24,"col":4},{"row":24,"col":5},{"row":25,"col":3},{"row":25,"col":4},{"row":25,"col":5},{"row":26,"col":3},{"row":26,"col":4},{"row":26,"col":5},{"row":42,"col":0},{"row":42,"col":8},{"row":43,"col":0},{"row":43,"col":1},{"row":43,"col":2},{"row":43,"col":6},{"row":43,"col":7},{"row":43,"col":8}],"rowSpacers":[11,14,19,25],"columnSpacers":[3,6]}`
+func generateSeatsSQL(keys []string, planes map[string]string) (string, error) {
+	builder := strings.Builder{}
+
+	for i, name := range keys {
+		var metadata PlaneMetadata
+
+		err := json.Unmarshal([]byte(planes[name]), &metadata)
+		if err != nil {
+			return "", err
+		}
+
+		builder.WriteString(metadata.generatePlaneSeatsSQL(i+1, i == len(keys)-1))
+	}
+
+	return builder.String(), nil
+}
 
 func main() {
-	var yamlData map[string]string
+	var planes map[string]string
+	planesBuffer := bytes.NewBufferString(getFileBeginning("airplanes"))
+	seatsBuffer := bytes.NewBufferString(getFileBeginning("seats"))
 
 	data, err := assets.EmbeddedFiles.ReadFile("misc/planes.yaml")
 
@@ -52,19 +67,26 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = yaml.Unmarshal(data, &yamlData)
+	err = yaml.Unmarshal(data, &planes)
 
 	if err != nil {
 		fmt.Println("Cannot unmarshal planes.yaml")
 		os.Exit(1)
 	}
 
-	for _, val := range yamlData {
-		var metadata PlaneMetadata
+	keys := maps.Keys(planes)
+	slices.Sort(keys)
 
-		err = json.Unmarshal([]byte(val), &metadata)
-		if err != nil {
-			os.Exit(1)
-		}
+	seatsSQL, err := generateSeatsSQL(keys, planes)
+	if err != nil {
+		fmt.Println("Cannot generate seats SQL: ", err)
 	}
+
+	planesBuffer.WriteString(generatePlanesSQL(keys, planes))
+	seatsBuffer.WriteString(seatsSQL)
+	planesBuffer.WriteString("\n\tEND IF;\nEND;\n$$\nLANGUAGE plpgsql;")
+	seatsBuffer.WriteString("\n\tEND IF;\nEND;\n$$\nLANGUAGE plpgsql;")
+
+	os.WriteFile("assets/migrations/004_add_airplanes.up.sql", planesBuffer.Bytes(), 0666)
+	os.WriteFile("assets/migrations/005_add_seats.up.sql", seatsBuffer.Bytes(), 0666)
 }
