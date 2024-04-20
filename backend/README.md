@@ -700,4 +700,4 @@ func Get() string {
 
 ## Changing the module path
 
-The module path is currently set to `github.com/Mateusz2734/wdai-project/backend`. If you want to change this please find and replace all instances of `github.com/Mateusz2734/wdai-project/backend` in the codebase with your own module path.
+The module path is currently set to `github.com/Mateusz2734/databases-project/backend`. If you want to change this please find and replace all instances of `github.com/Mateusz2734/databases-project/backend` in the codebase with your own module path.

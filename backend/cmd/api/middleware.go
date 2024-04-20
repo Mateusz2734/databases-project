@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/Mateusz2734/wdai-project/backend/internal/response"
+	"github.com/Mateusz2734/databases-project/backend/internal/response"
 
 	"github.com/tomasen/realip"
 )
