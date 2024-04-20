@@ -4,5 +4,5 @@ import (
 	"embed"
 )
 
-//go:embed "migrations"
+//go:embed "misc"
 var EmbeddedFiles embed.FS
