@@ -7,8 +7,8 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/Mateusz2734/wdai-project/backend/internal/response"
-	"github.com/Mateusz2734/wdai-project/backend/internal/validator"
+	"github.com/Mateusz2734/databases-project/backend/internal/response"
+	"github.com/Mateusz2734/databases-project/backend/internal/validator"
 )
 
 func (app *application) reportServerError(r *http.Request, err error) {

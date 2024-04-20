@@ -53,23 +53,23 @@ CREATE TABLE IF NOT EXISTS "airports" (
 );
 
 CREATE TABLE IF NOT EXISTS "airplanes" (
-  "airplane_id" INT PRIMARY KEY,
+  "airplane_id" SERIAL PRIMARY KEY,
   "airplane_model" VARCHAR(100) NOT NULL,
   "diagram_metadata" JSONB NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "flights" (
-  "flight_id" INT PRIMARY KEY,
-  "departure_airport" VARCHAR(3),
-  "arrival_airport" VARCHAR(3),
-  "departure_datetime" TIMESTAMP,
-  "arrival_datetime" TIMESTAMP,
+  "flight_id" SERIAL PRIMARY KEY,
+  "departure_airport" VARCHAR(3) NOT NULL,
+  "arrival_airport" VARCHAR(3) NOT NULL,
+  "departure_datetime" TIMESTAMP NOT NULL,
+  "arrival_datetime" TIMESTAMP NOT NULL,
   "airplane_id" INT,
-  "price" DECIMAL(10,2)
+  "price" DECIMAL(10,2) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "customers" (
-  "customer_id" INT PRIMARY KEY,
+  "customer_id" SERIAL PRIMARY KEY,
   "firstname" VARCHAR(50) NOT NULL,
   "lastname" VARCHAR(50) NOT NULL,
   "email" VARCHAR(100) NOT NULL,
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS "customers" (
 );
 
 CREATE TABLE IF NOT EXISTS "reservations" (
-  "reservation_id" INT PRIMARY KEY,
+  "reservation_id" SERIAL PRIMARY KEY,
   "flight_id" INT,
   "customer_id" INT,
   "seat_id" INT,
@@ -86,17 +86,18 @@ CREATE TABLE IF NOT EXISTS "reservations" (
 );
 
 CREATE TABLE IF NOT EXISTS "seats_flights" (
-  "seat_flight_id" INT PRIMARY KEY,
+  "seat_flight_id" SERIAL PRIMARY KEY,
   "flight_id" INT,
   "seat_id" INT,
   "availability" availability DEFAULT 'available'
 );
 
 CREATE TABLE IF NOT EXISTS "seats" (
-  "seat_id" INT PRIMARY KEY,
-  "airplane_id" INT,
-  "seat_number" VARCHAR(10) NOT NULL,
-  "seat_type" seat_class
+  "seat_id" SERIAL PRIMARY KEY,
+  "airplane_id" INT NOT NULL,
+  "seat_type" seat_class NOT NULL,
+  "row" INT NOT NULL,
+  "column" INT NOT NULL
 );
 
 SELECT add_foreign_key_if_not_exists('flights', 'departure_airport', 'airports', 'airport_code');

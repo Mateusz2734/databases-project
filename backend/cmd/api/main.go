@@ -8,8 +8,8 @@ import (
 	"runtime/debug"
 	"sync"
 
-	"github.com/Mateusz2734/wdai-project/backend/internal/db"
-	"github.com/Mateusz2734/wdai-project/backend/internal/version"
+	"github.com/Mateusz2734/databases-project/backend/internal/db"
+	"github.com/Mateusz2734/databases-project/backend/internal/version"
 
 	"github.com/lmittmann/tint"
 )
@@ -45,7 +45,7 @@ func run(logger *slog.Logger) error {
 
 	flag.StringVar(&cfg.baseURL, "base-url", "http://localhost:4444", "base URL for the application")
 	flag.IntVar(&cfg.httpPort, "http-port", 4444, "port to listen on for HTTP requests")
-	flag.StringVar(&cfg.db.dsn, "db-dsn", "postgresql://admin:admin@localhost:5432/wdai?sslmode=disable", "postgreSQL DSN")
+	flag.StringVar(&cfg.db.dsn, "db-dsn", "postgresql://admin:admin@localhost:5432/databases?sslmode=disable", "postgreSQL DSN")
 
 	showVersion := flag.Bool("version", false, "display version and exit")
 
