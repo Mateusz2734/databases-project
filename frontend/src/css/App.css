@@ -1,0 +1,21 @@
+.App {
+  text-align: center;
+}
+
+.economy{
+    color: white;
+    background-color: #365486;
+}
+.first-class{
+    color: white;
+    background-color: #5179ba;
+}
+.reduced{
+    color: white;
+    background-color: #2c3850;
+}
+.flight-details-page-container {
+    display: flex;
+    justify-content: center;
+    height: 100vh;
+}
