@@ -34,15 +34,17 @@ SELECT drop_fk_if_exists('flights', 'departure_airport');
 SELECT drop_fk_if_exists('flights', 'arrival_airport');
 SELECT drop_fk_if_exists('flights', 'airplane_id');
 SELECT drop_fk_if_exists('reservations', 'flight_id');
-SELECT drop_fk_if_exists('reservations', 'customer_id');
-SELECT drop_fk_if_exists('reservations', 'seat_id');
-SELECT drop_fk_if_exists('seats_flights', 'seat_id');
-SELECT drop_fk_if_exists('seats_flights', 'flight_id');
+SELECT drop_fk_if_exists('flight_seats', 'seat_id');
+SELECT drop_fk_if_exists('flight_seats', 'flight_id');
 SELECT drop_fk_if_exists('seats', 'airplane_id');
+SELECT drop_fk_if_exists('reservation_seats', 'reservation_id');
+SELECT drop_fk_if_exists('reservation_seats', 'seat_id');
+
 
 -- Drop tables
+DROP TABLE IF EXISTS "reservation_seats";
 DROP TABLE IF EXISTS "reservations";
-DROP TABLE IF EXISTS "seats_flights";
+DROP TABLE IF EXISTS "flight_seats";
 DROP TABLE IF EXISTS "flights";
 DROP TABLE IF EXISTS "seats";
 DROP TABLE IF EXISTS "airports";
