@@ -7,7 +7,44 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const addReservation = `-- name: AddReservation :one
+INSERT INTO reservations (flight_id, firstname, lastname, email, reservation_datetime, status)
+VALUES ($1, $2, $3, $4, NOW(), $5)
+RETURNING reservation_id, flight_id, firstname, lastname, email, reservation_datetime, status
+`
+
+type AddReservationParams struct {
+	FlightID  pgtype.Int4           `json:"flight_id"`
+	Firstname string                `json:"firstname"`
+	Lastname  string                `json:"lastname"`
+	Email     string                `json:"email"`
+	Status    NullReservationStatus `json:"status"`
+}
+
+func (q *Queries) AddReservation(ctx context.Context, arg AddReservationParams) (Reservation, error) {
+	row := q.db.QueryRow(ctx, addReservation,
+		arg.FlightID,
+		arg.Firstname,
+		arg.Lastname,
+		arg.Email,
+		arg.Status,
+	)
+	var i Reservation
+	err := row.Scan(
+		&i.ReservationID,
+		&i.FlightID,
+		&i.Firstname,
+		&i.Lastname,
+		&i.Email,
+		&i.ReservationDatetime,
+		&i.Status,
+	)
+	return i, err
+}
 
 const getCustomerReservations = `-- name: GetCustomerReservations :many
 SELECT reservation_id, flight_id, firstname, lastname, email, reservation_datetime, status FROM reservations 

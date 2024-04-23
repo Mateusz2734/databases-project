@@ -11,6 +11,75 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AddReservationSeatsParams struct {
+	ReservationID pgtype.Int4 `json:"reservation_id"`
+	SeatID        pgtype.Int4 `json:"seat_id"`
+}
+
+const checkIfUnavailable = `-- name: CheckIfUnavailable :many
+SELECT seat_id FROM flight_seats 
+WHERE flight_id = $1
+AND seat_id IN ($2) 
+AND availability != 'available'
+`
+
+type CheckIfUnavailableParams struct {
+	FlightID pgtype.Int4   `json:"flight_id"`
+	SeatIds  []pgtype.Int4 `json:"seat_ids"`
+}
+
+func (q *Queries) CheckIfUnavailable(ctx context.Context, arg CheckIfUnavailableParams) ([]pgtype.Int4, error) {
+	rows, err := q.db.Query(ctx, checkIfUnavailable, arg.FlightID, arg.SeatIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []pgtype.Int4
+	for rows.Next() {
+		var seat_id pgtype.Int4
+		if err := rows.Scan(&seat_id); err != nil {
+			return nil, err
+		}
+		items = append(items, seat_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const deleteFlightSeats = `-- name: DeleteFlightSeats :exec
+DELETE FROM flight_seats 
+WHERE flight_id = $1
+AND seat_id IN ($2)
+`
+
+type DeleteFlightSeatsParams struct {
+	FlightID pgtype.Int4   `json:"flight_id"`
+	SeatIds  []pgtype.Int4 `json:"seat_ids"`
+}
+
+func (q *Queries) DeleteFlightSeats(ctx context.Context, arg DeleteFlightSeatsParams) error {
+	_, err := q.db.Exec(ctx, deleteFlightSeats, arg.FlightID, arg.SeatIds)
+	return err
+}
+
+const deleteReservationSeats = `-- name: DeleteReservationSeats :exec
+DELETE FROM reservation_seats 
+WHERE reservation_id = $1 
+AND seat_id IN ($2)
+`
+
+type DeleteReservationSeatsParams struct {
+	ReservationID pgtype.Int4   `json:"reservation_id"`
+	SeatIds       []pgtype.Int4 `json:"seat_ids"`
+}
+
+func (q *Queries) DeleteReservationSeats(ctx context.Context, arg DeleteReservationSeatsParams) error {
+	_, err := q.db.Exec(ctx, deleteReservationSeats, arg.ReservationID, arg.SeatIds)
+	return err
+}
+
 const getReservedSeatsForFlight = `-- name: GetReservedSeatsForFlight :many
 SELECT seats.seat_id, seats.airplane_id, seats.seat_type, seats.row, seats."column" FROM seats
 JOIN flight_seats ON seats.seat_id = flight_seats.seat_id
@@ -42,4 +111,10 @@ func (q *Queries) GetReservedSeatsForFlight(ctx context.Context, flightID pgtype
 		return nil, err
 	}
 	return items, nil
+}
+
+type ReserveFlightSeatsParams struct {
+	FlightID     pgtype.Int4      `json:"flight_id"`
+	SeatID       pgtype.Int4      `json:"seat_id"`
+	Availability NullAvailability `json:"availability"`
 }
