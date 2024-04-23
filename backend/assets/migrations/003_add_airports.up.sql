@@ -9188,7 +9188,8 @@ BEGIN
             ,('KAQ','Kamulai','Kamulai','Papua New Guinea')
             ,('APE','San Juan Aposento','San Juan Aposento','Peru')
             ,('ODB','Cordoba','Cordoba','Spain')
-            ,('KCU','Masindi','Masindi','Uganda');
+            ,('KCU','Masindi','Masindi','Uganda')
+            ,('DWC','Al Maktoum International Airport','Dubai','United Arab Emirates');
     END IF;
 END;
 $$
