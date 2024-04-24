@@ -62,7 +62,7 @@ CREATE TABLE "seats" (
   "airplane_id" INT NOT NULL,
   "seat_type" seat_class NOT NULL,
   "row" INT NOT NULL,
-  "column" INT NOT NULL
+  "col" INT NOT NULL
 );
 
 CREATE TABLE "reservation_seats" (

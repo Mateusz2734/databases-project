@@ -6,6 +6,7 @@ package db
 
 import (
 	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -142,9 +143,9 @@ func (ns NullSeatClass) Value() (driver.Value, error) {
 }
 
 type Airplane struct {
-	AirplaneID      int32  `json:"airplane_id"`
-	AirplaneModel   string `json:"airplane_model"`
-	DiagramMetadata []byte `json:"diagram_metadata"`
+	AirplaneID      int32           `json:"airplane_id"`
+	AirplaneModel   string          `json:"airplane_model"`
+	DiagramMetadata json.RawMessage `json:"diagram_metadata"`
 }
 
 type Airport struct {
@@ -192,5 +193,5 @@ type Seat struct {
 	AirplaneID int32     `json:"airplane_id"`
 	SeatType   SeatClass `json:"seat_type"`
 	Row        int32     `json:"row"`
-	Column     int32     `json:"column"`
+	Col        int32     `json:"col"`
 }

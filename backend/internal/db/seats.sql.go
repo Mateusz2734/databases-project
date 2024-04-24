@@ -81,28 +81,27 @@ func (q *Queries) DeleteReservationSeats(ctx context.Context, arg DeleteReservat
 }
 
 const getReservedSeatsForFlight = `-- name: GetReservedSeatsForFlight :many
-SELECT seats.seat_id, seats.airplane_id, seats.seat_type, seats.row, seats."column" FROM seats
+SELECT seats.row, seats.col FROM seats
 JOIN flight_seats ON seats.seat_id = flight_seats.seat_id
 WHERE flight_seats.flight_id = $1
 AND flight_seats.availability IN ('reserved', 'unavailable')
 `
 
-func (q *Queries) GetReservedSeatsForFlight(ctx context.Context, flightID pgtype.Int4) ([]Seat, error) {
+type GetReservedSeatsForFlightRow struct {
+	Row int32 `json:"row"`
+	Col int32 `json:"col"`
+}
+
+func (q *Queries) GetReservedSeatsForFlight(ctx context.Context, flightID pgtype.Int4) ([]GetReservedSeatsForFlightRow, error) {
 	rows, err := q.db.Query(ctx, getReservedSeatsForFlight, flightID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Seat
+	var items []GetReservedSeatsForFlightRow
 	for rows.Next() {
-		var i Seat
-		if err := rows.Scan(
-			&i.SeatID,
-			&i.AirplaneID,
-			&i.SeatType,
-			&i.Row,
-			&i.Column,
-		); err != nil {
+		var i GetReservedSeatsForFlightRow
+		if err := rows.Scan(&i.Row, &i.Col); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

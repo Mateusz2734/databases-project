@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS "seats" (
   "airplane_id" INT,
   "seat_type" seat_class NOT NULL,
   "row" INT NOT NULL,
-  "column" INT NOT NULL
+  "col" INT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "reservation_seats" (

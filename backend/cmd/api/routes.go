@@ -18,6 +18,7 @@ func (app *application) routes() http.Handler {
 
 	mux.HandleFunc("/cities", app.getAvailableCities, "GET")
 	mux.HandleFunc("/airports", app.getFilteredAirports, "GET")
+	mux.HandleFunc("/flights/:id", app.getFlightData, "GET")
 
 	return mux
 }
