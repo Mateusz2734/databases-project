@@ -16,5 +16,8 @@ func (app *application) routes() http.Handler {
 	mux.Use(app.logAccess)
 	mux.Use(app.recoverPanic)
 
+	mux.HandleFunc("/cities", app.getAvailableCities, "GET")
+	mux.HandleFunc("/airports", app.getFilteredAirports, "GET")
+
 	return mux
 }

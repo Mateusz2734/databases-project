@@ -1,13 +1,11 @@
--- name: GetAirports :many
-SELECT * FROM airports;
-
 -- name: GetAirportsWithFilters :many
 SELECT * FROM airports WHERE true 
     AND (city = @city OR NOT @filter_by_city::boolean)
     AND (country = @country OR NOT @filter_by_country::boolean);
 
--- name: GetCities :many
-SELECT DISTINCT city FROM airports;
-
--- name: GetCountries :many
-SELECT DISTINCT country FROM airports;
+-- name: GetAvailableCitiesWithCountries :many
+SELECT DISTINCT city, country FROM airports where airport_code IN (
+    SELECT arrival_airport FROM flights
+    UNION ALL
+    SELECT departure_airport FROM flights
+);

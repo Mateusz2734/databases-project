@@ -9,35 +9,6 @@ import (
 	"context"
 )
 
-const getAirports = `-- name: GetAirports :many
-SELECT airport_code, airport_name, city, country FROM airports
-`
-
-func (q *Queries) GetAirports(ctx context.Context) ([]Airport, error) {
-	rows, err := q.db.Query(ctx, getAirports)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Airport
-	for rows.Next() {
-		var i Airport
-		if err := rows.Scan(
-			&i.AirportCode,
-			&i.AirportName,
-			&i.City,
-			&i.Country,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getAirportsWithFilters = `-- name: GetAirportsWithFilters :many
 SELECT airport_code, airport_name, city, country FROM airports WHERE true 
     AND (city = $1 OR NOT $2::boolean)
@@ -81,47 +52,32 @@ func (q *Queries) GetAirportsWithFilters(ctx context.Context, arg GetAirportsWit
 	return items, nil
 }
 
-const getCities = `-- name: GetCities :many
-SELECT DISTINCT city FROM airports
+const getAvailableCitiesWithCountries = `-- name: GetAvailableCitiesWithCountries :many
+SELECT DISTINCT city, country FROM airports where airport_code IN (
+    SELECT arrival_airport FROM flights
+    UNION ALL
+    SELECT departure_airport FROM flights
+)
 `
 
-func (q *Queries) GetCities(ctx context.Context) ([]string, error) {
-	rows, err := q.db.Query(ctx, getCities)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []string
-	for rows.Next() {
-		var city string
-		if err := rows.Scan(&city); err != nil {
-			return nil, err
-		}
-		items = append(items, city)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+type GetAvailableCitiesWithCountriesRow struct {
+	City    string `json:"city"`
+	Country string `json:"country"`
 }
 
-const getCountries = `-- name: GetCountries :many
-SELECT DISTINCT country FROM airports
-`
-
-func (q *Queries) GetCountries(ctx context.Context) ([]string, error) {
-	rows, err := q.db.Query(ctx, getCountries)
+func (q *Queries) GetAvailableCitiesWithCountries(ctx context.Context) ([]GetAvailableCitiesWithCountriesRow, error) {
+	rows, err := q.db.Query(ctx, getAvailableCitiesWithCountries)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []string
+	var items []GetAvailableCitiesWithCountriesRow
 	for rows.Next() {
-		var country string
-		if err := rows.Scan(&country); err != nil {
+		var i GetAvailableCitiesWithCountriesRow
+		if err := rows.Scan(&i.City, &i.Country); err != nil {
 			return nil, err
 		}
-		items = append(items, country)
+		items = append(items, i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
