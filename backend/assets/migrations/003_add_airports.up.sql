@@ -1135,7 +1135,7 @@ BEGIN
             ,('FMH','Otis AFB','Falmouth','United States')
             ,('PUL','Poulsbo','Poulsbo','United States')
             ,('PPF','Tri-City','Parsons','United States')
-            ,('DGF','Bisbee-douglas International','Douglas','Unites States')
+            ,('DGF','Bisbee-douglas International','Douglas','United States')
             ,('TGT','Tanga','Tanga','Tanzania')
             ,('BLJ','Batna','Batna','Algeria')
             ,('LST','Launceston','Launceston','Australia')
