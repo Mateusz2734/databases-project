@@ -7,18 +7,16 @@ package db
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const addReservation = `-- name: AddReservation :one
 INSERT INTO reservations (flight_id, firstname, lastname, email, reservation_datetime, status)
-VALUES ($1, $2, $3, $4, NOW(), $5)
+VALUES ($1::int, $2, $3, $4, NOW(), $5)
 RETURNING reservation_id, flight_id, firstname, lastname, email, reservation_datetime, status
 `
 
 type AddReservationParams struct {
-	FlightID  pgtype.Int4           `json:"flight_id"`
+	FlightID  int32                 `json:"flight_id"`
 	Firstname string                `json:"firstname"`
 	Lastname  string                `json:"lastname"`
 	Email     string                `json:"email"`

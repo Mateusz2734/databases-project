@@ -12,20 +12,20 @@ import (
 )
 
 type AddReservationSeatsParams struct {
-	ReservationID pgtype.Int4 `json:"reservation_id"`
-	SeatID        pgtype.Int4 `json:"seat_id"`
+	ReservationID int32 `json:"reservation_id"`
+	SeatID        int32 `json:"seat_id"`
 }
 
 const checkIfUnavailable = `-- name: CheckIfUnavailable :many
 SELECT seat_id FROM flight_seats 
-WHERE flight_id = $1
-AND seat_id IN ($2) 
+WHERE flight_id = $1::int
+AND seat_id = ANY($2::int[]) 
 AND availability != 'available'
 `
 
 type CheckIfUnavailableParams struct {
-	FlightID pgtype.Int4   `json:"flight_id"`
-	SeatIds  []pgtype.Int4 `json:"seat_ids"`
+	FlightID int32   `json:"flight_id"`
+	SeatIds  []int32 `json:"seat_ids"`
 }
 
 func (q *Queries) CheckIfUnavailable(ctx context.Context, arg CheckIfUnavailableParams) ([]pgtype.Int4, error) {
@@ -51,7 +51,7 @@ func (q *Queries) CheckIfUnavailable(ctx context.Context, arg CheckIfUnavailable
 const deleteFlightSeats = `-- name: DeleteFlightSeats :exec
 DELETE FROM flight_seats 
 WHERE flight_id = $1
-AND seat_id IN ($2)
+AND seat_id = ANY($2)
 `
 
 type DeleteFlightSeatsParams struct {
@@ -67,7 +67,7 @@ func (q *Queries) DeleteFlightSeats(ctx context.Context, arg DeleteFlightSeatsPa
 const deleteReservationSeats = `-- name: DeleteReservationSeats :exec
 DELETE FROM reservation_seats 
 WHERE reservation_id = $1 
-AND seat_id IN ($2)
+AND seat_id = ANY($2)
 `
 
 type DeleteReservationSeatsParams struct {
@@ -112,8 +112,47 @@ func (q *Queries) GetReservedSeatsForFlight(ctx context.Context, flightID pgtype
 	return items, nil
 }
 
+const getSeatIDs = `-- name: GetSeatIDs :many
+SELECT seat_id, airplane_id, seat_type, row, col FROM seats
+WHERE row = ANY($1)
+AND col = ANY($2)
+AND airplane_id = $3
+`
+
+type GetSeatIDsParams struct {
+	Rows       []int32 `json:"rows"`
+	Cols       []int32 `json:"cols"`
+	AirplaneID int32   `json:"airplane_id"`
+}
+
+func (q *Queries) GetSeatIDs(ctx context.Context, arg GetSeatIDsParams) ([]Seat, error) {
+	rows, err := q.db.Query(ctx, getSeatIDs, arg.Rows, arg.Cols, arg.AirplaneID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Seat
+	for rows.Next() {
+		var i Seat
+		if err := rows.Scan(
+			&i.SeatID,
+			&i.AirplaneID,
+			&i.SeatType,
+			&i.Row,
+			&i.Col,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 type ReserveFlightSeatsParams struct {
-	FlightID     pgtype.Int4      `json:"flight_id"`
-	SeatID       pgtype.Int4      `json:"seat_id"`
+	FlightID     int32            `json:"flight_id"`
+	SeatID       int32            `json:"seat_id"`
 	Availability NullAvailability `json:"availability"`
 }
