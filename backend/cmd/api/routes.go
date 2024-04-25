@@ -17,8 +17,12 @@ func (app *application) routes() http.Handler {
 	mux.Use(app.recoverPanic)
 
 	mux.HandleFunc("/cities", app.getAvailableCities, "GET")
+
 	mux.HandleFunc("/airports", app.getFilteredAirports, "GET")
+
 	mux.HandleFunc("/flights/:id", app.getFlightData, "GET")
+
+	mux.HandleFunc("/reservations", app.createReservation, "POST")
 
 	return mux
 }
