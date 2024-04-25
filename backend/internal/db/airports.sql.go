@@ -9,6 +9,30 @@ import (
 	"context"
 )
 
+const checkIfAirportsExist = `-- name: CheckIfAirportsExist :many
+SELECT airport_code FROM airports WHERE airport_code = ANY($1)
+`
+
+func (q *Queries) CheckIfAirportsExist(ctx context.Context, airportCodes []string) ([]string, error) {
+	rows, err := q.db.Query(ctx, checkIfAirportsExist, airportCodes)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var airport_code string
+		if err := rows.Scan(&airport_code); err != nil {
+			return nil, err
+		}
+		items = append(items, airport_code)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAirportsWithFilters = `-- name: GetAirportsWithFilters :many
 SELECT airport_code, airport_name, city, country FROM airports WHERE true 
     AND (city = $1 OR NOT $2::boolean)

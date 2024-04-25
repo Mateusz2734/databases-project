@@ -8,11 +8,11 @@ JOIN airports AS a2 ON a2.airport_code = f.arrival_airport
 WHERE true 
     AND (f.departure_datetime = @departure_datetime OR @departure_datetime IS NULL)
     AND (f.arrival_datetime = @arrival_datetime OR @arrival_datetime IS NULL)
-    AND (f.price BETWEEN @min_price AND @max_price OR NOT @filter_by_price :: boolean);
+    AND (f.price BETWEEN @min_price AND @max_price OR NOT @filter_by_price::boolean);
 
 -- name: AddFlight :exec
 INSERT INTO flights (departure_airport, arrival_airport, departure_datetime, arrival_datetime, airplane_id, price)
-VALUES (@departure_airport, @arrival_airport, @departure_datetime, @arrival_datetime, @airplane_id, @price);
+VALUES (@departure_airport, @arrival_airport, @departure_datetime, @arrival_datetime, @airplane_id::int, @price);
 
 -- name: GetFlightById :one
 SELECT f.*

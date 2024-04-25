@@ -13,7 +13,7 @@ import (
 
 const addFlight = `-- name: AddFlight :exec
 INSERT INTO flights (departure_airport, arrival_airport, departure_datetime, arrival_datetime, airplane_id, price)
-VALUES ($1, $2, $3, $4, $5, $6)
+VALUES ($1, $2, $3, $4, $5::int, $6)
 `
 
 type AddFlightParams struct {
@@ -21,7 +21,7 @@ type AddFlightParams struct {
 	ArrivalAirport    string           `json:"arrival_airport"`
 	DepartureDatetime pgtype.Timestamp `json:"departure_datetime"`
 	ArrivalDatetime   pgtype.Timestamp `json:"arrival_datetime"`
-	AirplaneID        pgtype.Int4      `json:"airplane_id"`
+	AirplaneID        int32            `json:"airplane_id"`
 	Price             pgtype.Numeric   `json:"price"`
 }
 
@@ -78,7 +78,7 @@ JOIN airports AS a2 ON a2.airport_code = f.arrival_airport
 WHERE true 
     AND (f.departure_datetime = $5 OR $5 IS NULL)
     AND (f.arrival_datetime = $6 OR $6 IS NULL)
-    AND (f.price BETWEEN $7 AND $8 OR NOT $9 :: boolean)
+    AND (f.price BETWEEN $7 AND $8 OR NOT $9::boolean)
 `
 
 type GetFlightsWithFiltersParams struct {

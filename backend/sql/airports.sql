@@ -9,3 +9,6 @@ SELECT DISTINCT city, country FROM airports where airport_code IN (
     UNION ALL
     SELECT departure_airport FROM flights
 );
+
+-- name: CheckIfAirportsExist :many
+SELECT airport_code FROM airports WHERE airport_code = ANY(sqlc.slice('airport_codes'));
