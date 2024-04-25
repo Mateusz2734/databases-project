@@ -40,6 +40,11 @@ func (app *application) getFlightData(w http.ResponseWriter, r *http.Request) {
 
 	reservedSeats, err := app.db.GetReservedSeatsForFlight(r.Context(), pgtype.Int4{Int32: flight.FlightID, Valid: true})
 
+	if err != nil && err != pgx.ErrNoRows {
+		app.serverError(w, r, err)
+		return
+	}
+
 	err = response.JSON(w, http.StatusOK, map[string]interface{}{
 		"flight":   flight,
 		"plane":    plane,
