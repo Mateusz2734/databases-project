@@ -120,7 +120,6 @@ func (app *application) createFlight(w http.ResponseWriter, r *http.Request) {
 	tmDep, err := time.Parse("2006-01-02 15:04", input.DepartureDatetime)
 
 	if err != nil {
-		fmt.Println(input.DepartureDatetime, err)
 		app.badRequest(w, r, err)
 		return
 	}
