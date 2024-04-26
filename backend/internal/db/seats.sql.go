@@ -105,6 +105,39 @@ func (q *Queries) DeleteReservationSeats(ctx context.Context, arg DeleteReservat
 	return err
 }
 
+const getReservationSeats = `-- name: GetReservationSeats :many
+SELECT seat_type, row, col 
+FROM reservation_seats
+JOIN seats ON reservation_seats.seat_id = seats.seat_id
+WHERE reservation_id = $1::int
+`
+
+type GetReservationSeatsRow struct {
+	SeatType SeatClass `json:"seat_type"`
+	Row      int32     `json:"row"`
+	Col      int32     `json:"col"`
+}
+
+func (q *Queries) GetReservationSeats(ctx context.Context, reservationID int32) ([]GetReservationSeatsRow, error) {
+	rows, err := q.db.Query(ctx, getReservationSeats, reservationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetReservationSeatsRow
+	for rows.Next() {
+		var i GetReservationSeatsRow
+		if err := rows.Scan(&i.SeatType, &i.Row, &i.Col); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getReservedSeatsForFlight = `-- name: GetReservedSeatsForFlight :many
 SELECT seats.row, seats.col FROM seats
 JOIN flight_seats ON seats.seat_id = flight_seats.seat_id

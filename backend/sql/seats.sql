@@ -34,3 +34,9 @@ AND seat_id = ANY(sqlc.slice('seat_ids')::int[]);
 DELETE FROM reservation_seats 
 WHERE reservation_id = @reservation_id::int
 RETURNING reservation_seats.seat_id::int;
+
+-- name: GetReservationSeats :many
+SELECT seat_type, row, col 
+FROM reservation_seats
+JOIN seats ON reservation_seats.seat_id = seats.seat_id
+WHERE reservation_id = @reservation_id::int;
