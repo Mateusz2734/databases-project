@@ -1,8 +1,9 @@
-import React, {useRef, useEffect, useState} from 'react';
+import React, {useRef, useEffect, useContext} from 'react';
 import SeatchartJS, { Options } from "seatchart";
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import Seatchart from "./Seatchart";
+import './css/FlightDetailsPage.css';
 
 const options: Options = {
     map: {
@@ -41,9 +42,14 @@ const options: Options = {
 };
 
 const FlightDetailsPage: React.FC = () => {
-    const id = useParams();
     const navigate = useNavigate();
     const seatchartRef = useRef<SeatchartJS>();
+    const { id } = useParams(); // accessing flight id from the URL
+
+
+    const handleBackClick = () => {
+        navigate(-1);
+    };
 
     useEffect(() => {
         const handleClick = () => {
@@ -51,11 +57,12 @@ const FlightDetailsPage: React.FC = () => {
             const reservationSeats= seatchartRef.current?.getCart();
 
             if (reservationCost && reservationCost > 0) {
-                navigate(`/Reservation`, { state: { reservationCost, id, reservationSeats } });
+                navigate(`/Reservation`, { state: { reservationCost, id, reservationSeats } }); /// TU PRZEKIEROWANIE DO STRONY REZERWACJI
             } else {
                 alert("Please select at least one seat before proceeding to reservation.");
             }
         };
+
 
         if (seatchartRef.current) {
             const button = seatchartRef.current.element.querySelector('.sc-cart-btn.sc-cart-btn-submit');
@@ -76,7 +83,8 @@ const FlightDetailsPage: React.FC = () => {
 
     return (
         <div className="flight-details-page-container">
-            <Seatchart ref={seatchartRef} options={options} />
+            <Seatchart ref={seatchartRef} options={options}/>
+            <button id={'backButton'} onClick={handleBackClick}>Back</button>
         </div>
     );
 };

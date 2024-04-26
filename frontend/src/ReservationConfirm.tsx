@@ -1,18 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import './css/ReservationConfirm.css';
 
 const ReservationConfirm: React.FC = () => {
+    const navigate = useNavigate();
     const location = useLocation();
     const { reservationCost, id, reservationSeats } = location.state;
+
 
     const [name, setName] = useState('');
     const [surname, setSurname] = useState('');
     const [email, setEmail] = useState('');
-
+    const handleBackClick = () => {
+        navigate(-1);
+    };
     return (
         <div className="reservation-confirm-container">
             <h1>Reservation Confirmation</h1>
+            <h2>Flight Details</h2>
+            <div style={{textAlign: 'right'}}>
+                <button onClick={handleBackClick} id={'backButton'}>Back</button>
+            </div>
             <form className="reservation-form">
                 <label>
                     Name:
