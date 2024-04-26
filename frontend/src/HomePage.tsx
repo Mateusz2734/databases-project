@@ -58,7 +58,7 @@ const HomePage: React.FC = () => {
             <div className="flight-container">
                 {flights.map((flight) => (
                     <Link key={flight.id}
-                          to={`/flight/${flight.id}`} // passing flight id in the URL
+                          to={`/flight/${flight.id}`}
                           className="flight">
                         <div className="origin">{flight.DepartureAirport}</div>
                         <div className="destination">{flight.ArrivalAirport}</div>
