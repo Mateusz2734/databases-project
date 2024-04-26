@@ -44,6 +44,15 @@ func (q *Queries) AddReservation(ctx context.Context, arg AddReservationParams) 
 	return i, err
 }
 
+const deleteReservation = `-- name: DeleteReservation :exec
+DELETE FROM reservations WHERE reservation_id = $1::int
+`
+
+func (q *Queries) DeleteReservation(ctx context.Context, reservationID int32) error {
+	_, err := q.db.Exec(ctx, deleteReservation, reservationID)
+	return err
+}
+
 const getCustomerReservations = `-- name: GetCustomerReservations :many
 SELECT reservation_id, flight_id, firstname, lastname, email, reservation_datetime, status FROM reservations 
     WHERE email = $1 
@@ -83,4 +92,23 @@ func (q *Queries) GetCustomerReservations(ctx context.Context, arg GetCustomerRe
 		return nil, err
 	}
 	return items, nil
+}
+
+const getReservationByID = `-- name: GetReservationByID :one
+SELECT reservation_id, flight_id, firstname, lastname, email, reservation_datetime, status FROM reservations WHERE reservation_id = $1::int
+`
+
+func (q *Queries) GetReservationByID(ctx context.Context, reservationID int32) (Reservation, error) {
+	row := q.db.QueryRow(ctx, getReservationByID, reservationID)
+	var i Reservation
+	err := row.Scan(
+		&i.ReservationID,
+		&i.FlightID,
+		&i.Firstname,
+		&i.Lastname,
+		&i.Email,
+		&i.ReservationDatetime,
+		&i.Status,
+	)
+	return i, err
 }

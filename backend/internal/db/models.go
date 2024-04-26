@@ -15,7 +15,6 @@ import (
 type Availability string
 
 const (
-	AvailabilityAvailable   Availability = "available"
 	AvailabilityReserved    Availability = "reserved"
 	AvailabilityUnavailable Availability = "unavailable"
 )
