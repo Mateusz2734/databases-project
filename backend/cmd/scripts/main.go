@@ -80,6 +80,7 @@ func main() {
 	seatsSQL, err := generateSeatsSQL(keys, planes)
 	if err != nil {
 		fmt.Println("Cannot generate seats SQL: ", err)
+		os.Exit(1)
 	}
 
 	planesBuffer.WriteString(generatePlanesSQL(keys, planes))
