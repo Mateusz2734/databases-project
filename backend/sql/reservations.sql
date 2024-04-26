@@ -8,3 +8,9 @@ SELECT * FROM reservations
 INSERT INTO reservations (flight_id, firstname, lastname, email, reservation_datetime, status)
 VALUES (@flight_id::int, @firstname, @lastname, @email, NOW(), @status)
 RETURNING *;
+
+-- name: GetReservationByID :one
+SELECT * FROM reservations WHERE reservation_id = @reservation_id::int;
+
+-- name: DeleteReservation :exec
+DELETE FROM reservations WHERE reservation_id = @reservation_id::int;

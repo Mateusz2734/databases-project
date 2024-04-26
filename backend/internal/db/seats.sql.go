@@ -19,8 +19,7 @@ type AddReservationSeatsParams struct {
 const checkIfUnavailable = `-- name: CheckIfUnavailable :many
 SELECT seat_id FROM flight_seats 
 WHERE flight_id = $1::int
-AND seat_id = ANY($2::int[]) 
-AND availability != 'available'
+AND seat_id = ANY($2::int[])
 `
 
 type CheckIfUnavailableParams struct {
@@ -48,15 +47,41 @@ func (q *Queries) CheckIfUnavailable(ctx context.Context, arg CheckIfUnavailable
 	return items, nil
 }
 
+const deleteAllReservationSeats = `-- name: DeleteAllReservationSeats :many
+DELETE FROM reservation_seats 
+WHERE reservation_id = $1::int
+RETURNING reservation_seats.seat_id::int
+`
+
+func (q *Queries) DeleteAllReservationSeats(ctx context.Context, reservationID int32) ([]int32, error) {
+	rows, err := q.db.Query(ctx, deleteAllReservationSeats, reservationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var reservation_seats_seat_id int32
+		if err := rows.Scan(&reservation_seats_seat_id); err != nil {
+			return nil, err
+		}
+		items = append(items, reservation_seats_seat_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const deleteFlightSeats = `-- name: DeleteFlightSeats :exec
 DELETE FROM flight_seats 
-WHERE flight_id = $1
-AND seat_id = ANY($2)
+WHERE flight_id = $1::int
+AND seat_id = ANY($2::int[])
 `
 
 type DeleteFlightSeatsParams struct {
-	FlightID pgtype.Int4   `json:"flight_id"`
-	SeatIds  []pgtype.Int4 `json:"seat_ids"`
+	FlightID int32   `json:"flight_id"`
+	SeatIds  []int32 `json:"seat_ids"`
 }
 
 func (q *Queries) DeleteFlightSeats(ctx context.Context, arg DeleteFlightSeatsParams) error {
@@ -66,13 +91,13 @@ func (q *Queries) DeleteFlightSeats(ctx context.Context, arg DeleteFlightSeatsPa
 
 const deleteReservationSeats = `-- name: DeleteReservationSeats :exec
 DELETE FROM reservation_seats 
-WHERE reservation_id = $1 
-AND seat_id = ANY($2)
+WHERE reservation_id = $1::int 
+AND seat_id = ANY($2::int[])
 `
 
 type DeleteReservationSeatsParams struct {
-	ReservationID pgtype.Int4   `json:"reservation_id"`
-	SeatIds       []pgtype.Int4 `json:"seat_ids"`
+	ReservationID int32   `json:"reservation_id"`
+	SeatIds       []int32 `json:"seat_ids"`
 }
 
 func (q *Queries) DeleteReservationSeats(ctx context.Context, arg DeleteReservationSeatsParams) error {
@@ -84,7 +109,6 @@ const getReservedSeatsForFlight = `-- name: GetReservedSeatsForFlight :many
 SELECT seats.row, seats.col FROM seats
 JOIN flight_seats ON seats.seat_id = flight_seats.seat_id
 WHERE flight_seats.flight_id = $1
-AND flight_seats.availability IN ('reserved', 'unavailable')
 `
 
 type GetReservedSeatsForFlightRow struct {

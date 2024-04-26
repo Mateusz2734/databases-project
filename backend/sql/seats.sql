@@ -1,14 +1,12 @@
 -- name: GetReservedSeatsForFlight :many
 SELECT seats.row, seats.col FROM seats
 JOIN flight_seats ON seats.seat_id = flight_seats.seat_id
-WHERE flight_seats.flight_id = @flight_id
-AND flight_seats.availability IN ('reserved', 'unavailable');
+WHERE flight_seats.flight_id = @flight_id;
 
 -- name: CheckIfUnavailable :many
 SELECT seat_id FROM flight_seats 
 WHERE flight_id = @flight_id::int
-AND seat_id = ANY(sqlc.slice('seat_ids')::int[]) 
-AND availability != 'available';
+AND seat_id = ANY(sqlc.slice('seat_ids')::int[]);
 
 -- name: GetSeatIDs :many
 SELECT * FROM seats
@@ -24,10 +22,15 @@ INSERT INTO flight_seats (flight_id, seat_id, availability) VALUES (@flight_id::
 
 -- name: DeleteReservationSeats :exec
 DELETE FROM reservation_seats 
-WHERE reservation_id = @reservation_id 
-AND seat_id = ANY(sqlc.slice('seat_ids'));
+WHERE reservation_id = @reservation_id::int 
+AND seat_id = ANY(sqlc.slice('seat_ids')::int[]);
 
 -- name: DeleteFlightSeats :exec
 DELETE FROM flight_seats 
-WHERE flight_id = @flight_id
-AND seat_id = ANY(sqlc.slice('seat_ids'));
+WHERE flight_id = @flight_id::int
+AND seat_id = ANY(sqlc.slice('seat_ids')::int[]);
+
+-- name: DeleteAllReservationSeats :many
+DELETE FROM reservation_seats 
+WHERE reservation_id = @reservation_id::int
+RETURNING reservation_seats.seat_id::int;

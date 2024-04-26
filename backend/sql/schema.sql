@@ -5,7 +5,6 @@ CREATE TYPE "reservation_status" AS ENUM (
 );
 
 CREATE TYPE "availability" AS ENUM (
-  'available',
   'reserved',
   'unavailable'
 );
