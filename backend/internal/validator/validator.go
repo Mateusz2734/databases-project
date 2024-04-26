@@ -38,3 +38,8 @@ func (v *Validator) CheckField(ok bool, key, message string) {
 		v.AddFieldError(key, message)
 	}
 }
+
+func (v *Validator) Clear() {
+	v.Errors = []string{}
+	v.FieldErrors = map[string]string{}
+}
