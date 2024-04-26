@@ -1,3 +1,5 @@
+.vscode/
 bin/
 tmp/
 build-errors.log
+*session.sql

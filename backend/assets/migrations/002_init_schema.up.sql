@@ -68,44 +68,44 @@ CREATE TABLE IF NOT EXISTS "flights" (
   "price" DECIMAL(10,2) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS "customers" (
-  "customer_id" SERIAL PRIMARY KEY,
-  "firstname" VARCHAR(50) NOT NULL,
-  "lastname" VARCHAR(50) NOT NULL,
-  "email" VARCHAR(100) NOT NULL,
-  "phone" VARCHAR(20) NOT NULL
-);
-
 CREATE TABLE IF NOT EXISTS "reservations" (
   "reservation_id" SERIAL PRIMARY KEY,
   "flight_id" INT,
-  "customer_id" INT,
   "seat_id" INT,
+  "firstname" VARCHAR(50) NOT NULL,
+  "lastname" VARCHAR(50) NOT NULL,
+  "email" VARCHAR(100) NOT NULL,
   "reservation_datetime" TIMESTAMP,
   "status" reservation_status
 );
 
-CREATE TABLE IF NOT EXISTS "seats_flights" (
-  "seat_flight_id" SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS "flight_seats" (
+  "id" SERIAL PRIMARY KEY,
   "flight_id" INT,
   "seat_id" INT,
-  "availability" availability DEFAULT 'available'
+  "availability" availability
 );
 
 CREATE TABLE IF NOT EXISTS "seats" (
   "seat_id" SERIAL PRIMARY KEY,
-  "airplane_id" INT NOT NULL,
+  "airplane_id" INT,
   "seat_type" seat_class NOT NULL,
   "row" INT NOT NULL,
-  "column" INT NOT NULL
+  "col" INT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS "reservation_seats" (
+  "id" SERIAL PRIMARY KEY,
+  "reservation_id" INT,
+  "seat_id" INT
 );
 
 SELECT add_foreign_key_if_not_exists('flights', 'departure_airport', 'airports', 'airport_code');
 SELECT add_foreign_key_if_not_exists('flights', 'arrival_airport', 'airports', 'airport_code');
 SELECT add_foreign_key_if_not_exists('flights', 'airplane_id', 'airplanes', 'airplane_id');
 SELECT add_foreign_key_if_not_exists('reservations', 'flight_id', 'flights', 'flight_id');
-SELECT add_foreign_key_if_not_exists('reservations', 'customer_id', 'customers', 'customer_id');
-SELECT add_foreign_key_if_not_exists('reservations', 'seat_id', 'seats', 'seat_id');
-SELECT add_foreign_key_if_not_exists('seats_flights', 'seat_id', 'seats', 'seat_id');
-SELECT add_foreign_key_if_not_exists('seats_flights', 'flight_id', 'flights', 'flight_id');
+SELECT add_foreign_key_if_not_exists('flight_seats', 'seat_id', 'seats', 'seat_id');
+SELECT add_foreign_key_if_not_exists('flight_seats', 'flight_id', 'flights', 'flight_id');
 SELECT add_foreign_key_if_not_exists('seats', 'airplane_id', 'airplanes', 'airplane_id');
+SELECT add_foreign_key_if_not_exists('reservation_seats', 'reservation_id', 'reservations', 'reservation_id');
+SELECT add_foreign_key_if_not_exists('reservation_seats', 'seat_id', 'seats', 'seat_id');

@@ -1,13 +1,22 @@
 version: "2"
 sql:
   - engine: "postgresql"
-    schema: "000001_initialize_schema_migrations.up.sql"
+    queries:
+      - "sql/airports.sql"
+      - "sql/flights.sql"
+      - "sql/reservations.sql"
+      - "sql/seats.sql"
+      - "sql/airplanes.sql"
+    schema: "sql/schema.sql"
     gen:
       go:
         package: "db"
         out: "internal/db"
         sql_package: "pgx/v5"
         output_db_file_name: "queries.go"
-        emit_result_struct_pointers: true
         emit_json_tags: true
-        json_tags_case_style: "camel"
+        json_tags_case_style: "snake"
+        overrides:
+          - db_type: "jsonb"
+            go_type: "encoding/json.RawMessage"
+

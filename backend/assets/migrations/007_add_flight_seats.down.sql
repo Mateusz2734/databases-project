@@ -1,0 +1,1 @@
+DELETE FROM flight_seats;

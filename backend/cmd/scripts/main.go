@@ -18,7 +18,7 @@ func getFileBeginning(table string) string {
 	if table == "airplanes" {
 		insert = "airplanes(airplane_model, diagram_metadata)"
 	} else if table == "seats" {
-		insert = "seats(airplane_id, seat_type, row, \"column\")"
+		insert = "seats(airplane_id, seat_type, row, col)"
 	}
 	return "DO $$\nBEGIN\n\tIF (SELECT COUNT(*) FROM " + table + ") = 0 THEN\n\t\tINSERT INTO " + insert + " VALUES\n"
 }

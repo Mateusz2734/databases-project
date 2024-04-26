@@ -1,7 +1,7 @@
 DO $$
 BEGIN
 	IF (SELECT COUNT(*) FROM seats) = 0 THEN
-		INSERT INTO seats(airplane_id, seat_type, row, "column") VALUES
+		INSERT INTO seats(airplane_id, seat_type, row, col) VALUES
 			(1, 'business', 0, 0),
 			(1, 'business', 0, 1),
 			(1, 'business', 0, 4),
