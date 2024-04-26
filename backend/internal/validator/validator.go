@@ -1,7 +1,6 @@
 package validator
 
 type Validator struct {
-	Status      string            `json:"status"`
 	Errors      []string          `json:"errors,omitempty"`
 	FieldErrors map[string]string `json:"fieldErrors,omitempty"`
 }
