@@ -7,6 +7,7 @@ sql:
       - "sql/reservations.sql"
       - "sql/seats.sql"
       - "sql/airplanes.sql"
+      - "sql/reports.sql"
     schema: "sql/schema.sql"
     gen:
       go:
