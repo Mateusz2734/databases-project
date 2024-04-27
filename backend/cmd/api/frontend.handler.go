@@ -9,16 +9,13 @@ import (
 
 func (app *application) getAvailableCities(w http.ResponseWriter, r *http.Request) {
 	entries, err := app.db.GetAvailableCitiesWithCountries(r.Context())
-
 	if err != nil {
 		app.serverError(w, r, err)
 	}
 
 	countryCities := misc.GetCountryCities(entries)
 
-	err = response.JSON(w, http.StatusOK, countryCities)
-
-	if err != nil {
+	if err = response.JSON(w, http.StatusOK, countryCities); err != nil {
 		app.serverError(w, r, err)
 	}
 }

@@ -7,6 +7,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const addReservation = `-- name: AddReservation :one
@@ -44,11 +46,26 @@ func (q *Queries) AddReservation(ctx context.Context, arg AddReservationParams) 
 	return i, err
 }
 
+const deleteReservation = `-- name: DeleteReservation :exec
+DELETE FROM reservations WHERE reservation_id = $1::int
+`
+
+func (q *Queries) DeleteReservation(ctx context.Context, reservationID int32) error {
+	_, err := q.db.Exec(ctx, deleteReservation, reservationID)
+	return err
+}
+
 const getCustomerReservations = `-- name: GetCustomerReservations :many
-SELECT reservation_id, flight_id, firstname, lastname, email, reservation_datetime, status FROM reservations 
-    WHERE email = $1 
-    AND $2 = firstname 
-    AND $3 = lastname
+SELECT reservations.reservation_id, reservations.flight_id, reservations.firstname, reservations.lastname, reservations.email, reservations.reservation_datetime, reservations.status, 
+    flights.departure_airport, 
+    flights.arrival_airport,
+    flights.departure_datetime
+FROM reservations
+JOIN flights ON reservations.flight_id = flights.flight_id
+WHERE email = $1 
+AND $2 = firstname 
+AND $3 = lastname
+AND flights.departure_datetime > NOW()
 `
 
 type GetCustomerReservationsParams struct {
@@ -57,23 +74,33 @@ type GetCustomerReservationsParams struct {
 	Lastname  string `json:"lastname"`
 }
 
-func (q *Queries) GetCustomerReservations(ctx context.Context, arg GetCustomerReservationsParams) ([]Reservation, error) {
+type GetCustomerReservationsRow struct {
+	Reservation       Reservation      `json:"reservation"`
+	DepartureAirport  string           `json:"departure_airport"`
+	ArrivalAirport    string           `json:"arrival_airport"`
+	DepartureDatetime pgtype.Timestamp `json:"departure_datetime"`
+}
+
+func (q *Queries) GetCustomerReservations(ctx context.Context, arg GetCustomerReservationsParams) ([]GetCustomerReservationsRow, error) {
 	rows, err := q.db.Query(ctx, getCustomerReservations, arg.Email, arg.Firstname, arg.Lastname)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Reservation
+	var items []GetCustomerReservationsRow
 	for rows.Next() {
-		var i Reservation
+		var i GetCustomerReservationsRow
 		if err := rows.Scan(
-			&i.ReservationID,
-			&i.FlightID,
-			&i.Firstname,
-			&i.Lastname,
-			&i.Email,
-			&i.ReservationDatetime,
-			&i.Status,
+			&i.Reservation.ReservationID,
+			&i.Reservation.FlightID,
+			&i.Reservation.Firstname,
+			&i.Reservation.Lastname,
+			&i.Reservation.Email,
+			&i.Reservation.ReservationDatetime,
+			&i.Reservation.Status,
+			&i.DepartureAirport,
+			&i.ArrivalAirport,
+			&i.DepartureDatetime,
 		); err != nil {
 			return nil, err
 		}
@@ -83,4 +110,38 @@ func (q *Queries) GetCustomerReservations(ctx context.Context, arg GetCustomerRe
 		return nil, err
 	}
 	return items, nil
+}
+
+const getReservationByID = `-- name: GetReservationByID :one
+SELECT reservations.reservation_id, reservations.flight_id, reservations.firstname, reservations.lastname, reservations.email, reservations.reservation_datetime, reservations.status, flights.flight_id, flights.departure_airport, flights.arrival_airport, flights.departure_datetime, flights.arrival_datetime, flights.airplane_id, flights.price
+FROM reservations 
+JOIN flights ON reservations.flight_id = flights.flight_id
+WHERE reservation_id = $1::int
+`
+
+type GetReservationByIDRow struct {
+	Reservation Reservation `json:"reservation"`
+	Flight      Flight      `json:"flight"`
+}
+
+func (q *Queries) GetReservationByID(ctx context.Context, reservationID int32) (GetReservationByIDRow, error) {
+	row := q.db.QueryRow(ctx, getReservationByID, reservationID)
+	var i GetReservationByIDRow
+	err := row.Scan(
+		&i.Reservation.ReservationID,
+		&i.Reservation.FlightID,
+		&i.Reservation.Firstname,
+		&i.Reservation.Lastname,
+		&i.Reservation.Email,
+		&i.Reservation.ReservationDatetime,
+		&i.Reservation.Status,
+		&i.Flight.FlightID,
+		&i.Flight.DepartureAirport,
+		&i.Flight.ArrivalAirport,
+		&i.Flight.DepartureDatetime,
+		&i.Flight.ArrivalDatetime,
+		&i.Flight.AirplaneID,
+		&i.Flight.Price,
+	)
+	return i, err
 }

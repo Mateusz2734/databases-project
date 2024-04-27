@@ -28,9 +28,10 @@ func (app *application) getFilteredAirports(w http.ResponseWriter, r *http.Reque
 		airports = []db.Airport{}
 	}
 
-	err = response.JSON(w, http.StatusOK, airports)
-
-	if err != nil {
+	data := map[string]interface{}{
+		"airports": airports,
+	}
+	if err = response.JSON(w, http.StatusOK, data); err != nil {
 		app.serverError(w, r, err)
 	}
 }

@@ -20,10 +20,16 @@ func (app *application) routes() http.Handler {
 
 	mux.HandleFunc("/airports", app.getFilteredAirports, "GET")
 
-	mux.HandleFunc("/flights/:id", app.getFlightData, "GET")
+	mux.HandleFunc("/flights", app.getFilteredFlights, "GET")
 	mux.HandleFunc("/flights", app.createFlight, "POST")
+	mux.HandleFunc("/flights/:id", app.getFlightData, "GET")
+	mux.HandleFunc("/flights/:id", app.editFlight, "PATCH")
 
+	mux.HandleFunc("/reservations", app.getClientReservations, "GET")
 	mux.HandleFunc("/reservations", app.createReservation, "POST")
+	mux.HandleFunc("/reservations/:id", app.getReservation, "GET")
+	mux.HandleFunc("/reservations/:id", app.deleteReservation, "DELETE")
+	mux.HandleFunc("/reservations/:id", app.editReservation, "PATCH")
 
 	return mux
 }
