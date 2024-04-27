@@ -47,6 +47,32 @@ func (q *Queries) CheckIfUnavailable(ctx context.Context, arg CheckIfUnavailable
 	return items, nil
 }
 
+const deleteAllFlightSeats = `-- name: DeleteAllFlightSeats :many
+DELETE FROM flight_seats 
+WHERE flight_id = $1::int
+RETURNING flight_seats.seat_id::int
+`
+
+func (q *Queries) DeleteAllFlightSeats(ctx context.Context, flightID int32) ([]int32, error) {
+	rows, err := q.db.Query(ctx, deleteAllFlightSeats, flightID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var flight_seats_seat_id int32
+		if err := rows.Scan(&flight_seats_seat_id); err != nil {
+			return nil, err
+		}
+		items = append(items, flight_seats_seat_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const deleteAllReservationSeats = `-- name: DeleteAllReservationSeats :many
 DELETE FROM reservation_seats 
 WHERE reservation_id = $1::int

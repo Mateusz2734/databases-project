@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/Mateusz2734/databases-project/backend/internal/db"
 	"github.com/Mateusz2734/databases-project/backend/internal/request"
 	"github.com/Mateusz2734/databases-project/backend/internal/response"
+	"github.com/Mateusz2734/databases-project/backend/internal/validator"
 	"github.com/alexedwards/flow"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -21,40 +21,39 @@ func (app *application) getFlightData(w http.ResponseWriter, r *http.Request) {
 	flightId := flow.Param(r.Context(), "id")
 
 	flightIdInt, err := strconv.ParseInt(flightId, 10, 32)
-
 	if err != nil {
 		app.badRequest(w, r, err)
 		return
 	}
 
 	flight, err = app.db.GetFlightById(r.Context(), int32(flightIdInt))
-
 	if err != nil && err != pgx.ErrNoRows {
 		app.serverError(w, r, err)
+		return
+	} else if err == pgx.ErrNoRows {
+		response.JSON(w, http.StatusNotFound, map[string]interface{}{"message": "Flight not found"})
 		return
 	}
 
 	plane, err = app.db.GetAirplaneById(r.Context(), flight.AirplaneID.Int32)
-
-	if err != nil && err != pgx.ErrNoRows {
+	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
 	reservedSeats, err := app.db.GetReservedSeatsForFlight(r.Context(), pgtype.Int4{Int32: flight.FlightID, Valid: true})
-
 	if err != nil && err != pgx.ErrNoRows {
 		app.serverError(w, r, err)
 		return
 	}
 
-	err = response.JSON(w, http.StatusOK, map[string]interface{}{
+	data := map[string]interface{}{
 		"flight":   flight,
 		"plane":    plane,
 		"reserved": reservedSeats,
-	})
+	}
 
-	if err != nil {
+	if err = response.JSON(w, http.StatusOK, data); err != nil {
 		app.serverError(w, r, err)
 	}
 }
@@ -69,81 +68,30 @@ func (app *application) createFlight(w http.ResponseWriter, r *http.Request) {
 		Price             string `json:"price"`
 	}
 
-	err := request.DecodeJSON(w, r, &input)
-
-	if err != nil {
+	if err := request.DecodeJSON(w, r, &input); err != nil {
 		app.badRequest(w, r, err)
 		return
 	}
 
-	if len(input.DepartureAirport) != 3 || len(input.ArrivalAirport) != 3 {
-		app.badRequest(w, r, fmt.Errorf("airport code must be 3 characters long"))
+	if err := validator.ValidateAirports(input.DepartureAirport, input.ArrivalAirport); err != nil {
+		app.badRequest(w, r, err)
 		return
 	}
 
-	if input.DepartureAirport == input.ArrivalAirport {
-		app.badRequest(w, r, fmt.Errorf("departure and arrival airports are the same"))
-		return
-	}
-
-	existing, err := app.db.CheckIfAirportsExist(r.Context(), []string{input.DepartureAirport, input.ArrivalAirport})
-
+	existingAirports, err := app.db.CheckIfAirportsExist(r.Context(), []string{input.DepartureAirport, input.ArrivalAirport})
 	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
-	if len(existing) != 2 {
-		err = response.JSON(w, http.StatusNotFound, map[string]interface{}{
+	if len(existingAirports) != 2 {
+		response.JSON(w, http.StatusNotFound, map[string]interface{}{
 			"message": "At least one of the airports does not exist",
 		})
-
-		if err != nil {
-			app.serverError(w, r, err)
-			return
-		}
-
 		return
 	}
 
-	price := pgtype.Numeric{}
-	depTime := pgtype.Timestamp{}
-	arrTime := pgtype.Timestamp{}
-
-	err = price.Scan(input.Price)
-
-	if err != nil {
-		app.badRequest(w, r, err)
-		return
-	}
-
-	tmDep, err := time.Parse("2006-01-02 15:04", input.DepartureDatetime)
-
-	if err != nil {
-		app.badRequest(w, r, err)
-		return
-	}
-
-	err = depTime.Scan(tmDep)
-
-	if err != nil {
-		app.badRequest(w, r, err)
-		return
-	}
-
-	tmArr, err := time.Parse("2006-01-02 15:04", input.ArrivalDatetime)
-
-	if err != nil {
-		app.badRequest(w, r, err)
-		return
-	}
-
-	if tmArr.Before(tmDep) {
-		app.badRequest(w, r, fmt.Errorf("arrival time is before departure time"))
-		return
-	}
-
-	err = arrTime.Scan(tmArr)
+	departure, arrival, price, err := validator.ValidateCreateFlightParams(input.DepartureDatetime, input.ArrivalDatetime, input.Price)
 
 	if err != nil {
 		app.badRequest(w, r, err)
@@ -153,22 +101,147 @@ func (app *application) createFlight(w http.ResponseWriter, r *http.Request) {
 	params := db.AddFlightParams{
 		DepartureAirport:  input.DepartureAirport,
 		ArrivalAirport:    input.ArrivalAirport,
-		DepartureDatetime: depTime,
-		ArrivalDatetime:   arrTime,
+		DepartureDatetime: departure,
+		ArrivalDatetime:   arrival,
 		AirplaneID:        input.AirplaneID,
 		Price:             price,
 	}
 
-	err = app.db.AddFlight(r.Context(), params)
-
-	if err != nil {
+	if err = app.db.AddFlight(r.Context(), params); err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
-	err = response.JSON(w, http.StatusCreated, map[string]string{"message": "Flight created successfully"})
+	msg := map[string]string{"message": "Flight created successfully"}
+	if err = response.JSON(w, http.StatusCreated, msg); err != nil {
+		app.serverError(w, r, err)
+	}
+}
 
+func (app *application) getFilteredFlights(w http.ResponseWriter, r *http.Request) {
+	departureAirport := r.URL.Query().Get("departure_airport")
+	arrivalAirport := r.URL.Query().Get("arrival_airport")
+	departureDatetime := r.URL.Query().Get("departure_datetime")
+	arrivalDatetime := r.URL.Query().Get("arrival_datetime")
+	minPrice := r.URL.Query().Get("min_price")
+	maxPrice := r.URL.Query().Get("max_price")
+
+	if err := validator.ValidateAirports(departureAirport, arrivalAirport); err != nil {
+		app.badRequest(w, r, err)
+		return
+	}
+
+	departure, arrival, min, max, err := validator.ValidateGetFilteredFlightsParams(departureDatetime, arrivalDatetime, minPrice, maxPrice)
 	if err != nil {
+		app.badRequest(w, r, err)
+		return
+	}
+
+	filtered, err := app.db.GetFlightsWithFilters(r.Context(), db.GetFlightsWithFiltersParams{
+		FromAirport:         departureAirport,
+		FilterByFromAirport: departureAirport != "",
+
+		ToAirport:         arrivalAirport,
+		FilterByToAirport: arrivalAirport != "",
+
+		DepartureDatetime:         departure,
+		FilterByDepartureDatetime: departureDatetime != "",
+
+		ArrivalDatetime:         arrival,
+		FilterByArrivalDatetime: arrivalDatetime != "",
+
+		MinPrice:      min,
+		MaxPrice:      max,
+		FilterByPrice: minPrice != "" && maxPrice != "",
+	})
+
+	if err != nil && err != pgx.ErrNoRows {
+		app.serverError(w, r, err)
+		return
+	}
+
+	if err == pgx.ErrNoRows || len(filtered) == 0 {
+		response.JSON(w, http.StatusNotFound, map[string]interface{}{
+			"message": "No flights found",
+		})
+		return
+	}
+
+	if err = response.JSON(w, http.StatusOK, filtered); err != nil {
+		app.serverError(w, r, err)
+	}
+}
+
+func (app *application) editFlight(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		DepartureDatetime string `json:"departure_datetime"`
+		ArrivalDatetime   string `json:"arrival_datetime"`
+		Price             string `json:"price"`
+	}
+
+	flightId := flow.Param(r.Context(), "id")
+	if flightId == "" {
+		app.badRequest(w, r, fmt.Errorf("flightID not provided"))
+		return
+	}
+
+	if err := request.DecodeJSON(w, r, &input); err != nil {
+		app.badRequest(w, r, err)
+		return
+	}
+
+	flightIDint, err := strconv.ParseInt(flightId, 10, 32)
+	if err != nil {
+		app.badRequest(w, r, err)
+		return
+	}
+
+	tx, err := app.db.BeginTx(r.Context(), pgx.TxOptions{})
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+	defer tx.Rollback(r.Context())
+
+	qtx := app.db.WithTx(tx)
+
+	flight, err := qtx.GetFlightById(r.Context(), int32(flightIDint))
+	if err != nil && err != pgx.ErrNoRows {
+		app.serverError(w, r, err)
+		return
+	}
+
+	if err == pgx.ErrNoRows {
+		response.JSON(w, http.StatusNotFound, map[string]interface{}{
+			"message": "Flight not found",
+		})
+		return
+	}
+
+	departure, arrival, price, err := validator.ValidateEditFlightParams(flight, input.DepartureDatetime, input.ArrivalDatetime, input.Price)
+	if err != nil {
+		app.badRequest(w, r, err)
+		return
+	}
+
+	params := db.UpdateFlightParams{
+		DepartureDatetime: departure,
+		ArrivalDatetime:   arrival,
+		Price:             price,
+		FlightID:          int32(flightIDint),
+	}
+	if err := app.db.UpdateFlight(r.Context(), params); err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	if err := tx.Commit(r.Context()); err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	msg := map[string]string{"message": "Flight updated successfully"}
+	if err := response.JSON(w, http.StatusOK, msg); err != nil {
 		app.serverError(w, r, err)
 	}
 }

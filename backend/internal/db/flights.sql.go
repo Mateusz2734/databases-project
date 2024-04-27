@@ -72,35 +72,39 @@ const getFlightsWithFilters = `-- name: GetFlightsWithFilters :many
 SELECT f.flight_id, f.departure_airport, f.arrival_airport, f.departure_datetime, f.arrival_datetime, f.airplane_id, f.price
 FROM flights AS f
 JOIN airports AS a ON a.airport_code = f.departure_airport
-    AND (a.city = $1 OR NOT $2 :: boolean)
+    AND (a.airport_code = $1 OR NOT $2 :: boolean)
 JOIN airports AS a2 ON a2.airport_code = f.arrival_airport
-    AND (a2.city = $3 OR NOT $4 :: boolean)
+    AND (a2.airport_code = $3 OR NOT $4 :: boolean)
 WHERE true 
-    AND (f.departure_datetime = $5 OR $5 IS NULL)
-    AND (f.arrival_datetime = $6 OR $6 IS NULL)
-    AND (f.price BETWEEN $7 AND $8 OR NOT $9::boolean)
+    AND (date_part('day', f.departure_datetime) = date_part('day', $5::timestamp) OR NOT $6::boolean)
+    AND (date_part('day', f.arrival_datetime) = date_part('day', $7::timestamp) OR NOT $8::boolean)
+    AND (f.price BETWEEN $9 AND $10 OR NOT $11::boolean)
 `
 
 type GetFlightsWithFiltersParams struct {
-	FromCity          string           `json:"from_city"`
-	FilterByFromCity  bool             `json:"filter_by_from_city"`
-	ToCity            string           `json:"to_city"`
-	FilterByToCity    bool             `json:"filter_by_to_city"`
-	DepartureDatetime pgtype.Timestamp `json:"departure_datetime"`
-	ArrivalDatetime   pgtype.Timestamp `json:"arrival_datetime"`
-	MinPrice          pgtype.Numeric   `json:"min_price"`
-	MaxPrice          pgtype.Numeric   `json:"max_price"`
-	FilterByPrice     bool             `json:"filter_by_price"`
+	FromAirport               string           `json:"from_airport"`
+	FilterByFromAirport       bool             `json:"filter_by_from_airport"`
+	ToAirport                 string           `json:"to_airport"`
+	FilterByToAirport         bool             `json:"filter_by_to_airport"`
+	DepartureDatetime         pgtype.Timestamp `json:"departure_datetime"`
+	FilterByDepartureDatetime bool             `json:"filter_by_departure_datetime"`
+	ArrivalDatetime           pgtype.Timestamp `json:"arrival_datetime"`
+	FilterByArrivalDatetime   bool             `json:"filter_by_arrival_datetime"`
+	MinPrice                  pgtype.Numeric   `json:"min_price"`
+	MaxPrice                  pgtype.Numeric   `json:"max_price"`
+	FilterByPrice             bool             `json:"filter_by_price"`
 }
 
 func (q *Queries) GetFlightsWithFilters(ctx context.Context, arg GetFlightsWithFiltersParams) ([]Flight, error) {
 	rows, err := q.db.Query(ctx, getFlightsWithFilters,
-		arg.FromCity,
-		arg.FilterByFromCity,
-		arg.ToCity,
-		arg.FilterByToCity,
+		arg.FromAirport,
+		arg.FilterByFromAirport,
+		arg.ToAirport,
+		arg.FilterByToAirport,
 		arg.DepartureDatetime,
+		arg.FilterByDepartureDatetime,
 		arg.ArrivalDatetime,
+		arg.FilterByArrivalDatetime,
 		arg.MinPrice,
 		arg.MaxPrice,
 		arg.FilterByPrice,

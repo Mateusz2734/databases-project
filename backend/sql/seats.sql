@@ -35,6 +35,11 @@ DELETE FROM reservation_seats
 WHERE reservation_id = @reservation_id::int
 RETURNING reservation_seats.seat_id::int;
 
+-- name: DeleteAllFlightSeats :many
+DELETE FROM flight_seats 
+WHERE flight_id = @flight_id::int
+RETURNING flight_seats.seat_id::int;
+
 -- name: GetReservationSeats :many
 SELECT seat_type, row, col 
 FROM reservation_seats
