@@ -134,10 +134,6 @@ func (app *application) createReservation(w http.ResponseWriter, r *http.Request
 		reserveParams = append(reserveParams, db.ReserveFlightSeatsParams{
 			FlightID: input.FlightID,
 			SeatID:   seatID,
-			Availability: db.NullAvailability{
-				Availability: db.AvailabilityReserved,
-				Valid:        true,
-			},
 		})
 	}
 
