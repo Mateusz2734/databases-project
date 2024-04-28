@@ -98,6 +98,12 @@ CREATE TABLE IF NOT EXISTS "reservation_seats" (
   "seat_id" INT
 );
 
+CREATE TABLE IF NOT EXISTS "pricing" (
+  "id" SERIAL PRIMARY KEY,
+  "seat_class" seat_class NOT NULL,
+  "value" DECIMAL(10,2) NOT NULL
+);
+
 SELECT add_foreign_key_if_not_exists('flights', 'departure_airport', 'airports', 'airport_code');
 SELECT add_foreign_key_if_not_exists('flights', 'arrival_airport', 'airports', 'airport_code');
 SELECT add_foreign_key_if_not_exists('flights', 'airplane_id', 'airplanes', 'airplane_id');

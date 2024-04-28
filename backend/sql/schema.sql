@@ -65,6 +65,12 @@ CREATE TABLE "reservation_seats" (
   "seat_id" INT
 );
 
+CREATE TABLE "pricing" (
+  "id" SERIAL PRIMARY KEY,
+  "seat_class" seat_class NOT NULL,
+  "value" DECIMAL(10,2) NOT NULL
+);
+
 ALTER TABLE "reservation_seats" ADD FOREIGN KEY ("reservation_id") REFERENCES "reservations" ("reservation_id");
 
 ALTER TABLE "reservation_seats" ADD FOREIGN KEY ("seat_id") REFERENCES "seats" ("seat_id");

@@ -49,6 +49,7 @@ DROP TABLE IF EXISTS "flights";
 DROP TABLE IF EXISTS "seats";
 DROP TABLE IF EXISTS "airports";
 DROP TABLE IF EXISTS "airplanes";
+DROP TABLE IF EXISTS "pricing";
 
 -- Drop enums
 SELECT drop_type_if_exists('seat_class');

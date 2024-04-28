@@ -129,6 +129,12 @@ type FlightSeat struct {
 	CreatedAt pgtype.Timestamp `json:"created_at"`
 }
 
+type Pricing struct {
+	ID        int32          `json:"id"`
+	SeatClass SeatClass      `json:"seat_class"`
+	Value     pgtype.Numeric `json:"value"`
+}
+
 type Reservation struct {
 	ReservationID       int32                 `json:"reservation_id"`
 	FlightID            pgtype.Int4           `json:"flight_id"`
