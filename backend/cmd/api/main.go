@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/Mateusz2734/databases-project/backend/internal/db"
-	"github.com/Mateusz2734/databases-project/backend/internal/version"
 
 	"github.com/lmittmann/tint"
 )
@@ -47,14 +46,7 @@ func run(logger *slog.Logger) error {
 	flag.IntVar(&cfg.httpPort, "http-port", 4444, "port to listen on for HTTP requests")
 	flag.StringVar(&cfg.db.dsn, "db-dsn", "postgresql://admin:admin@localhost:5432/databases?sslmode=disable", "postgreSQL DSN")
 
-	showVersion := flag.Bool("version", false, "display version and exit")
-
 	flag.Parse()
-
-	if *showVersion {
-		fmt.Printf("version: %s\n", version.Get())
-		return nil
-	}
 
 	db, err := db.NewDB(cfg.db.dsn)
 
