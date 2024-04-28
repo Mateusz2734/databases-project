@@ -15,7 +15,10 @@ func (app *application) getAvailableCities(w http.ResponseWriter, r *http.Reques
 
 	countryCities := misc.GetCountryCities(entries)
 
-	if err = response.JSON(w, http.StatusOK, countryCities); err != nil {
+	data := map[string]interface{}{
+		"countries": countryCities,
+	}
+	if err = response.JSON(w, http.StatusOK, data); err != nil {
 		app.serverError(w, r, err)
 	}
 }
