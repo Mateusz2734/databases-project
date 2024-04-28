@@ -7,22 +7,61 @@ package db
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const getPopularDestinations = `-- name: GetPopularDestinations :many
+SELECT f.arrival_airport, COUNT(s.seat_id) as seat_count
+FROM flights f
+JOIN flight_seats s ON f.flight_id = s.flight_id AND departure_datetime BETWEEN $1::string AND $2::string
+GROUP BY f.arrival_airport
+ORDER BY seat_count DESC
+LIMIT $3::int
+`
+
+type GetPopularDestinationsParams struct {
+	StartDate   string `json:"start_date"`
+	EndDate     string `json:"end_date"`
+	CustomLimit int32  `json:"custom_limit"`
+}
+
+type GetPopularDestinationsRow struct {
+	ArrivalAirport string `json:"arrival_airport"`
+	SeatCount      int64  `json:"seat_count"`
+}
+
+func (q *Queries) GetPopularDestinations(ctx context.Context, arg GetPopularDestinationsParams) ([]GetPopularDestinationsRow, error) {
+	rows, err := q.db.Query(ctx, getPopularDestinations, arg.StartDate, arg.EndDate, arg.CustomLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetPopularDestinationsRow
+	for rows.Next() {
+		var i GetPopularDestinationsRow
+		if err := rows.Scan(&i.ArrivalAirport, &i.SeatCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
 
 const getPopularFlights = `-- name: GetPopularFlights :many
 SELECT f.departure_airport, f.arrival_airport, COUNT(s.seat_id) as seat_count
 FROM flights f
-JOIN flight_seats s ON f.flight_id = s.flight_id AND departure_datetime BETWEEN $1::string AND $2
+JOIN flight_seats s ON f.flight_id = s.flight_id AND departure_datetime BETWEEN $1::string AND $2::string
 GROUP BY f.departure_airport, f.arrival_airport
 ORDER BY seat_count DESC
-LIMIT 20
+LIMIT $3::int
 `
 
 type GetPopularFlightsParams struct {
-	StartDate string           `json:"start_date"`
-	EndDate   pgtype.Timestamp `json:"end_date"`
+	StartDate   string `json:"start_date"`
+	EndDate     string `json:"end_date"`
+	CustomLimit int32  `json:"custom_limit"`
 }
 
 type GetPopularFlightsRow struct {
@@ -32,7 +71,7 @@ type GetPopularFlightsRow struct {
 }
 
 func (q *Queries) GetPopularFlights(ctx context.Context, arg GetPopularFlightsParams) ([]GetPopularFlightsRow, error) {
-	rows, err := q.db.Query(ctx, getPopularFlights, arg.StartDate, arg.EndDate)
+	rows, err := q.db.Query(ctx, getPopularFlights, arg.StartDate, arg.EndDate, arg.CustomLimit)
 	if err != nil {
 		return nil, err
 	}
