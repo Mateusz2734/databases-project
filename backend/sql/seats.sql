@@ -18,7 +18,7 @@ AND airplane_id = @airplane_id;
 INSERT INTO reservation_seats (reservation_id, seat_id) VALUES (@reservation_id::int, @seat_id::int);
 
 -- name: ReserveFlightSeats :copyfrom
-INSERT INTO flight_seats (flight_id, seat_id, availability) VALUES (@flight_id::int, @seat_id::int, @availability);
+INSERT INTO flight_seats (flight_id, seat_id) VALUES (@flight_id::int, @seat_id::int);
 
 -- name: DeleteReservationSeats :exec
 DELETE FROM reservation_seats 

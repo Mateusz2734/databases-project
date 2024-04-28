@@ -12,48 +12,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type Availability string
-
-const (
-	AvailabilityReserved    Availability = "reserved"
-	AvailabilityUnavailable Availability = "unavailable"
-)
-
-func (e *Availability) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = Availability(s)
-	case string:
-		*e = Availability(s)
-	default:
-		return fmt.Errorf("unsupported scan type for Availability: %T", src)
-	}
-	return nil
-}
-
-type NullAvailability struct {
-	Availability Availability `json:"availability"`
-	Valid        bool         `json:"valid"` // Valid is true if Availability is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullAvailability) Scan(value interface{}) error {
-	if value == nil {
-		ns.Availability, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.Availability.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullAvailability) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.Availability), nil
-}
-
 type ReservationStatus string
 
 const (
@@ -165,10 +123,16 @@ type Flight struct {
 }
 
 type FlightSeat struct {
-	ID           int32            `json:"id"`
-	FlightID     pgtype.Int4      `json:"flight_id"`
-	SeatID       pgtype.Int4      `json:"seat_id"`
-	Availability NullAvailability `json:"availability"`
+	ID        int32            `json:"id"`
+	FlightID  pgtype.Int4      `json:"flight_id"`
+	SeatID    pgtype.Int4      `json:"seat_id"`
+	CreatedAt pgtype.Timestamp `json:"created_at"`
+}
+
+type Pricing struct {
+	ID        int32          `json:"id"`
+	SeatClass SeatClass      `json:"seat_class"`
+	Value     pgtype.Numeric `json:"value"`
 }
 
 type Reservation struct {

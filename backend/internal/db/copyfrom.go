@@ -64,7 +64,6 @@ func (r iteratorForReserveFlightSeats) Values() ([]interface{}, error) {
 	return []interface{}{
 		r.rows[0].FlightID,
 		r.rows[0].SeatID,
-		r.rows[0].Availability,
 	}, nil
 }
 
@@ -73,5 +72,5 @@ func (r iteratorForReserveFlightSeats) Err() error {
 }
 
 func (q *Queries) ReserveFlightSeats(ctx context.Context, arg []ReserveFlightSeatsParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"flight_seats"}, []string{"flight_id", "seat_id", "availability"}, &iteratorForReserveFlightSeats{rows: arg})
+	return q.db.CopyFrom(ctx, []string{"flight_seats"}, []string{"flight_id", "seat_id"}, &iteratorForReserveFlightSeats{rows: arg})
 }

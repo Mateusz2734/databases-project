@@ -60,10 +60,10 @@ func (app *application) getFlightData(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) createFlight(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		DepartureDatetime string `json:"departure_datetime"`
-		ArrivalDatetime   string `json:"arrival_datetime"`
-		DepartureAirport  string `json:"departure_airport"`
-		ArrivalAirport    string `json:"arrival_airport"`
+		DepartureDatetime string `json:"departure_time"`
+		ArrivalDatetime   string `json:"arrival_time"`
+		DepartureAirport  string `json:"origin"`
+		ArrivalAirport    string `json:"destination"`
 		AirplaneID        int32  `json:"airplane_id"`
 		Price             string `json:"price"`
 	}
@@ -119,10 +119,10 @@ func (app *application) createFlight(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) getFilteredFlights(w http.ResponseWriter, r *http.Request) {
-	departureAirport := r.URL.Query().Get("departure_airport")
-	arrivalAirport := r.URL.Query().Get("arrival_airport")
-	departureDatetime := r.URL.Query().Get("departure_datetime")
-	arrivalDatetime := r.URL.Query().Get("arrival_datetime")
+	departureAirport := r.URL.Query().Get("origin")
+	arrivalAirport := r.URL.Query().Get("destination")
+	departureDatetime := r.URL.Query().Get("departure_time")
+	arrivalDatetime := r.URL.Query().Get("arrival_time")
 	minPrice := r.URL.Query().Get("min_price")
 	maxPrice := r.URL.Query().Get("max_price")
 
@@ -174,8 +174,8 @@ func (app *application) getFilteredFlights(w http.ResponseWriter, r *http.Reques
 
 func (app *application) editFlight(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		DepartureDatetime string `json:"departure_datetime"`
-		ArrivalDatetime   string `json:"arrival_datetime"`
+		DepartureDatetime string `json:"departure_time"`
+		ArrivalDatetime   string `json:"arrival_time"`
 		Price             string `json:"price"`
 	}
 

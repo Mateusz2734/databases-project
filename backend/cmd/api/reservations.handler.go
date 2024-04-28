@@ -83,6 +83,12 @@ func (app *application) createReservation(w http.ResponseWriter, r *http.Request
 		seatIDs = append(seatIDs, seat.SeatID)
 	}
 
+	if len(seatIDs) != len(input.Seats) {
+		msg := map[string]string{"message": "Some seats do not exist"}
+		response.JSON(w, http.StatusNotFound, msg)
+		return
+	}
+
 	unavailableIDs, err := qtx.CheckIfUnavailable(r.Context(), db.CheckIfUnavailableParams{SeatIds: seatIDs, FlightID: input.FlightID})
 	if err != nil {
 		app.serverError(w, r, err)
@@ -134,10 +140,6 @@ func (app *application) createReservation(w http.ResponseWriter, r *http.Request
 		reserveParams = append(reserveParams, db.ReserveFlightSeatsParams{
 			FlightID: input.FlightID,
 			SeatID:   seatID,
-			Availability: db.NullAvailability{
-				Availability: db.AvailabilityReserved,
-				Valid:        true,
-			},
 		})
 	}
 
@@ -152,7 +154,11 @@ func (app *application) createReservation(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if err = response.JSON(w, http.StatusCreated, reservation); err != nil {
+	data := map[string]interface{}{
+		"message":     "Reservation created",
+		"reservation": reservation,
+	}
+	if err = response.JSON(w, http.StatusCreated, data); err != nil {
 		app.serverError(w, r, err)
 	}
 }

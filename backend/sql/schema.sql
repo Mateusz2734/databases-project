@@ -4,11 +4,6 @@ CREATE TYPE "reservation_status" AS ENUM (
   'cancelled'
 );
 
-CREATE TYPE "availability" AS ENUM (
-  'reserved',
-  'unavailable'
-);
-
 CREATE TYPE "seat_class" AS ENUM (
   'economy',
   'business',
@@ -53,7 +48,7 @@ CREATE TABLE "flight_seats" (
   "id" SERIAL PRIMARY KEY,
   "flight_id" INT,
   "seat_id" INT,
-  "availability" availability DEFAULT 'available'
+  "created_at" TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE "seats" (
@@ -68,6 +63,12 @@ CREATE TABLE "reservation_seats" (
   "id" SERIAL PRIMARY KEY,
   "reservation_id" INT,
   "seat_id" INT
+);
+
+CREATE TABLE "pricing" (
+  "id" SERIAL PRIMARY KEY,
+  "seat_class" seat_class NOT NULL,
+  "value" DECIMAL(10,2) NOT NULL
 );
 
 ALTER TABLE "reservation_seats" ADD FOREIGN KEY ("reservation_id") REFERENCES "reservations" ("reservation_id");

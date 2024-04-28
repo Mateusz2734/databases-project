@@ -235,7 +235,6 @@ func (q *Queries) GetSeatIDs(ctx context.Context, arg GetSeatIDsParams) ([]Seat,
 }
 
 type ReserveFlightSeatsParams struct {
-	FlightID     int32            `json:"flight_id"`
-	SeatID       int32            `json:"seat_id"`
-	Availability NullAvailability `json:"availability"`
+	FlightID int32 `json:"flight_id"`
+	SeatID   int32 `json:"seat_id"`
 }

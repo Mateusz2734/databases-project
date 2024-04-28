@@ -42,7 +42,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 SELECT create_enum_type_if_not_exists('reservation_status', ARRAY['''pending''', '''confirmed''', '''cancelled''']);
-SELECT create_enum_type_if_not_exists('availability', ARRAY['''reserved''', '''unavailable''']);
 SELECT create_enum_type_if_not_exists('seat_class', ARRAY['''economy''', '''business''', '''first_class''', '''economy_plus''']);
 
 CREATE TABLE IF NOT EXISTS "airports" (
@@ -82,7 +81,7 @@ CREATE TABLE IF NOT EXISTS "flight_seats" (
   "id" SERIAL PRIMARY KEY,
   "flight_id" INT,
   "seat_id" INT,
-  "availability" availability
+  "created_at" TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS "seats" (
@@ -97,6 +96,12 @@ CREATE TABLE IF NOT EXISTS "reservation_seats" (
   "id" SERIAL PRIMARY KEY,
   "reservation_id" INT,
   "seat_id" INT
+);
+
+CREATE TABLE IF NOT EXISTS "pricing" (
+  "id" SERIAL PRIMARY KEY,
+  "seat_class" seat_class NOT NULL,
+  "value" DECIMAL(10,2) NOT NULL
 );
 
 SELECT add_foreign_key_if_not_exists('flights', 'departure_airport', 'airports', 'airport_code');
