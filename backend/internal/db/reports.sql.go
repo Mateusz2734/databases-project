@@ -7,7 +7,53 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const getPeriodicEarningsBetweenDates = `-- name: GetPeriodicEarningsBetweenDates :many
+SELECT 
+        GREATEST(DATE_TRUNC($1, created_at), $2)::date AS period_start,
+        SUM(f.price * p.value)::bigint AS earnings
+FROM seats s 
+INNER JOIN flight_seats fs ON s.seat_id = fs.seat_id
+INNER JOIN flights f ON fs.flight_id = f.flight_id 
+INNER JOIN pricing p ON s.seat_type = p.seat_class
+WHERE created_at BETWEEN $2 AND $3::date
+GROUP BY period_start
+ORDER BY period_start ASC
+`
+
+type GetPeriodicEarningsBetweenDatesParams struct {
+	Type      string      `json:"type"`
+	StartDate pgtype.Date `json:"start_date"`
+	EndDate   pgtype.Date `json:"end_date"`
+}
+
+type GetPeriodicEarningsBetweenDatesRow struct {
+	PeriodStart pgtype.Date `json:"period_start"`
+	Earnings    int64       `json:"earnings"`
+}
+
+func (q *Queries) GetPeriodicEarningsBetweenDates(ctx context.Context, arg GetPeriodicEarningsBetweenDatesParams) ([]GetPeriodicEarningsBetweenDatesRow, error) {
+	rows, err := q.db.Query(ctx, getPeriodicEarningsBetweenDates, arg.Type, arg.StartDate, arg.EndDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetPeriodicEarningsBetweenDatesRow
+	for rows.Next() {
+		var i GetPeriodicEarningsBetweenDatesRow
+		if err := rows.Scan(&i.PeriodStart, &i.Earnings); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
 
 const getPopularDestinations = `-- name: GetPopularDestinations :many
 SELECT f.arrival_airport, COUNT(s.seat_id) as seat_count
@@ -80,6 +126,65 @@ func (q *Queries) GetPopularFlights(ctx context.Context, arg GetPopularFlightsPa
 	for rows.Next() {
 		var i GetPopularFlightsRow
 		if err := rows.Scan(&i.DepartureAirport, &i.ArrivalAirport, &i.SeatCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTicketsSoldBetweenDates = `-- name: GetTicketsSoldBetweenDates :one
+SELECT COUNT(seat_id) as seat_count
+FROM flight_seats
+WHERE created_at BETWEEN $1 AND $2
+`
+
+type GetTicketsSoldBetweenDatesParams struct {
+	StartDate pgtype.Timestamp `json:"start_date"`
+	EndDate   pgtype.Timestamp `json:"end_date"`
+}
+
+func (q *Queries) GetTicketsSoldBetweenDates(ctx context.Context, arg GetTicketsSoldBetweenDatesParams) (int64, error) {
+	row := q.db.QueryRow(ctx, getTicketsSoldBetweenDates, arg.StartDate, arg.EndDate)
+	var seat_count int64
+	err := row.Scan(&seat_count)
+	return seat_count, err
+}
+
+const getTotalEarningsBetweenDates = `-- name: GetTotalEarningsBetweenDates :many
+SELECT s.seat_type, 
+       SUM(f.price * p.value)::bigint AS earnings_per_seat_type
+FROM seats s 
+INNER JOIN flight_seats fs ON s.seat_id = fs.seat_id 
+INNER JOIN flights f ON fs.flight_id = f.flight_id 
+INNER JOIN pricing p ON s.seat_type = p.seat_class
+WHERE fs.created_at BETWEEN $1::date AND $2::date
+GROUP BY s.seat_type
+`
+
+type GetTotalEarningsBetweenDatesParams struct {
+	StartDate pgtype.Date `json:"start_date"`
+	EndDate   pgtype.Date `json:"end_date"`
+}
+
+type GetTotalEarningsBetweenDatesRow struct {
+	SeatType            SeatClass `json:"seat_type"`
+	EarningsPerSeatType int64     `json:"earnings_per_seat_type"`
+}
+
+func (q *Queries) GetTotalEarningsBetweenDates(ctx context.Context, arg GetTotalEarningsBetweenDatesParams) ([]GetTotalEarningsBetweenDatesRow, error) {
+	rows, err := q.db.Query(ctx, getTotalEarningsBetweenDates, arg.StartDate, arg.EndDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetTotalEarningsBetweenDatesRow
+	for rows.Next() {
+		var i GetTotalEarningsBetweenDatesRow
+		if err := rows.Scan(&i.SeatType, &i.EarningsPerSeatType); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
