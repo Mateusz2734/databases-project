@@ -21,7 +21,7 @@ WHERE created_at BETWEEN @start_date AND @end_date;
 
 -- name: GetTotalEarningsBetweenDates :many
 SELECT s.seat_type, 
-       SUM(f.price * p.value)::bigint AS earnings_per_seat_type
+       SUM(f.price * p.value)::numeric AS earnings_per_seat_type
 FROM seats s 
 INNER JOIN flight_seats fs ON s.seat_id = fs.seat_id 
 INNER JOIN flights f ON fs.flight_id = f.flight_id 
@@ -32,7 +32,7 @@ GROUP BY s.seat_type;
 -- name: GetPeriodicEarningsBetweenDates :many
 SELECT 
         GREATEST(DATE_TRUNC(@type, created_at), @start_date)::date AS period_start,
-        SUM(f.price * p.value)::bigint AS earnings
+        SUM(f.price * p.value)::numeric AS earnings
 FROM seats s 
 INNER JOIN flight_seats fs ON s.seat_id = fs.seat_id
 INNER JOIN flights f ON fs.flight_id = f.flight_id 

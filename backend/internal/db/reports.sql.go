@@ -14,7 +14,7 @@ import (
 const getPeriodicEarningsBetweenDates = `-- name: GetPeriodicEarningsBetweenDates :many
 SELECT 
         GREATEST(DATE_TRUNC($1, created_at), $2)::date AS period_start,
-        SUM(f.price * p.value)::bigint AS earnings
+        SUM(f.price * p.value)::numeric AS earnings
 FROM seats s 
 INNER JOIN flight_seats fs ON s.seat_id = fs.seat_id
 INNER JOIN flights f ON fs.flight_id = f.flight_id 
@@ -31,8 +31,8 @@ type GetPeriodicEarningsBetweenDatesParams struct {
 }
 
 type GetPeriodicEarningsBetweenDatesRow struct {
-	PeriodStart pgtype.Date `json:"period_start"`
-	Earnings    int64       `json:"earnings"`
+	PeriodStart pgtype.Date    `json:"period_start"`
+	Earnings    pgtype.Numeric `json:"earnings"`
 }
 
 func (q *Queries) GetPeriodicEarningsBetweenDates(ctx context.Context, arg GetPeriodicEarningsBetweenDatesParams) ([]GetPeriodicEarningsBetweenDatesRow, error) {
@@ -156,7 +156,7 @@ func (q *Queries) GetTicketsSoldBetweenDates(ctx context.Context, arg GetTickets
 
 const getTotalEarningsBetweenDates = `-- name: GetTotalEarningsBetweenDates :many
 SELECT s.seat_type, 
-       SUM(f.price * p.value)::bigint AS earnings_per_seat_type
+       SUM(f.price * p.value)::numeric AS earnings_per_seat_type
 FROM seats s 
 INNER JOIN flight_seats fs ON s.seat_id = fs.seat_id 
 INNER JOIN flights f ON fs.flight_id = f.flight_id 
@@ -171,8 +171,8 @@ type GetTotalEarningsBetweenDatesParams struct {
 }
 
 type GetTotalEarningsBetweenDatesRow struct {
-	SeatType            SeatClass `json:"seat_type"`
-	EarningsPerSeatType int64     `json:"earnings_per_seat_type"`
+	SeatType            SeatClass      `json:"seat_type"`
+	EarningsPerSeatType pgtype.Numeric `json:"earnings_per_seat_type"`
 }
 
 func (q *Queries) GetTotalEarningsBetweenDates(ctx context.Context, arg GetTotalEarningsBetweenDatesParams) ([]GetTotalEarningsBetweenDatesRow, error) {
