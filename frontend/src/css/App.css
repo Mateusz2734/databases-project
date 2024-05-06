@@ -2,18 +2,23 @@
   text-align: center;
 }
 
-.economy{
+.business{
     color: white;
     background-color: #365486;
 }
-.first-class{
+.economy-plus{
     color: white;
     background-color: #5179ba;
 }
-.reduced{
+.economy{
     color: white;
     background-color: #2c3850;
 }
+.first-class{
+    color: white;
+    background-color: #1f2a3f;
+}
+
 .flight-details-page-container {
     display: flex;
     justify-content: center;
