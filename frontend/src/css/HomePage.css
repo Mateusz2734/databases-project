@@ -1,9 +1,9 @@
 .home-page {
-    padding: 20px;
     display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
+    justify-content: center;
     align-items: center;
+    padding: 20px;
+    flex-direction: column;
     margin-left: auto;
     margin-right: auto;
 }
@@ -19,7 +19,6 @@
     width: 50%;
     justify-content: center;
     padding: 20px;
-
 }
 
 .flight {
@@ -38,6 +37,7 @@
 .flight:hover {
     background-color: #ddd;
 }
+
 .origin {
     font-weight: bold;
     color: #333;
@@ -46,4 +46,31 @@
 .destination {
     font-style: italic;
     color: #666;
+}
+
+.input-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.input-container input[type="text"] {
+    margin: 0 10px;
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.input-container button {
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: none;
+    background-color: #333;
+    color: #fff;
+    cursor: pointer;
+}
+
+.input-container button:hover {
+    background-color: #666;
 }

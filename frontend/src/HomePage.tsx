@@ -1,37 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './css/HomePage.css';
 
 const HomePage: React.FC = () => {
-    const flights = [
-        {
-            id: 1,
-            FlightID: 'ABC123',
-            DepartureAirport: 'Warszawa',
-            ArrivalAirport: 'Nowy Jork',
-            DepartureDateTime: '2024-05-01T08:00:00',
-            ArrivalDateTime: '2024-05-01T15:00:00',
-            AirplaneID: 'BOEING747',
-        },
-        {
-            id: 2,
-            FlightID: 'DEF456',
-            DepartureAirport: 'Kraków',
-            ArrivalAirport: 'Paryż',
-            DepartureDateTime: '2024-05-02T10:00:00',
-            ArrivalDateTime: '2024-05-02T13:05:00',
-            AirplaneID: 'AIRBUS320',
-        },
-        {
-            id: 3,
-            FlightID: 'GHI789',
-            DepartureAirport: 'Gdańsk',
-            ArrivalAirport: 'Tokio',
-            DepartureDateTime: '2024-05-03T12:00:00',
-            ArrivalDateTime: '2024-05-04T08:10:00',
-            AirplaneID: 'BOEING787',
-        },
-    ];
+    const [flights, setFlights] = useState([]);
+    const [param1, setParam1] = useState('');
+    const [param2, setParam2] = useState('');
+    const url = `http://localhost:4444/flights?origin=${param1}&destination=${param2}`;
+
+    const fetchFlights = () => {
+        if(param1==param2){
+            window.alert('Origin and destination must be different.');
+            return;
+        }
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                if (data.message === 'No flights found') {
+                    window.alert('No flights found with the given parameters.');
+                } else {
+                    setFlights(data);
+                }
+            })
+            .catch(error => console.error('Error fetching flights:', error));
+    };
+
     const formatDate = (dateTimeString: string) => {
         const date = new Date(dateTimeString);
         const formatter = new Intl.DateTimeFormat('en-UK', {
@@ -52,21 +46,40 @@ const HomePage: React.FC = () => {
         return `${hours}h ${minutes}m`;
     };
 
+    const handleParam1Change = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setParam1(event.target.value);
+    };
+
+    const handleParam2Change = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setParam2(event.target.value);
+    };
+
+    const handleFetchClick = () => {
+        if (param1.length === 3 && param2.length === 3) {
+            fetchFlights();
+        } else {
+            window.alert('Both parameters must be 3 characters long.');
+        }
+    };
+
     return (
         <div className="home-page">
-            <h1 className="header">Available flights</h1>
-            <div className="flight-container">
-                {flights.map((flight) => (
-                    <Link key={flight.id}
-                          to={`/flight/${flight.id}`}
-                          className="flight">
-                        <div className="origin">{flight.DepartureAirport}</div>
-                        <div className="destination">{flight.ArrivalAirport}</div>
-                        <div className="date">{formatDate(flight.DepartureDateTime)}</div>
-                        <div className="duration">Duration: {calculateFlightDuration(flight.DepartureDateTime, flight.ArrivalDateTime)}</div>
-                    </Link>
-                ))}
+            <div className="input-container">
+                <input type="text" value={param1} onChange={handleParam1Change} />
+                <input type="text" value={param2} onChange={handleParam2Change} />
+                <button onClick={handleFetchClick}>Search</button>
             </div>
+            {flights.map((flight: any) => (
+                <Link key={flight.flight_id}
+                      to={`/flight/${flight.flight_id}`}
+                      className="flight">
+                    <div className="origin">{flight.departure_airport}</div>
+                    <div className="destination">{flight.arrival_airport}</div>
+                    <div className="date">{formatDate(flight.departure_datetime)}</div>
+                    <div
+                        className="duration">Duration: {calculateFlightDuration(flight.departure_datetime, flight.arrival_datetime)}</div>
+                </Link>
+            ))}
         </div>
     );
 };
