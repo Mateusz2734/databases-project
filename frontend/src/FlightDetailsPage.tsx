@@ -62,12 +62,24 @@ const FlightDetailsPage: React.FC = () => {
                 columns: flightData.plane.diagram_metadata.columns,
                 seatTypes: Object.entries(flightData.plane.diagram_metadata.seatTypes).reduce((acc, [key, value]) => {
                     const seatType = value as SeatType;
+                    let multiplier = 1;
+                    if(seatType.label === 'Business' ) {
+                        multiplier = 2;
+                    }
+                    else if(seatType.label === 'First Class'){
+                        multiplier = 3.5;
+                    }
+                    else if(seatType.label === 'Economy Plus'){
+                        multiplier = 1.2;
+                    }
+
                     acc[key] = {
                         label: seatType.label,
                         cssClass: seatType.cssClass,
-                        price: seatType.price,
+                        price: parseFloat((flightData.flight.price * multiplier).toFixed(2)),
                         seatRows: seatType.seatRows,
                     };
+
                     return acc;
                 }, {} as any),
                 reservedSeats: flightData.reserved,
@@ -86,6 +98,8 @@ const FlightDetailsPage: React.FC = () => {
             const reservationCost = seatchartRef.current?.getCartTotal();
             const reservationSeats = seatchartRef.current?.getCart();
             console.log('test');
+            console.log(flightData.price * 1.5);
+
             if (reservationCost && reservationCost > 0) {
                 navigate(`/Reservation`, { state: { reservationCost, id, reservationSeats } });
             } else {

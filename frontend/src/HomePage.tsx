@@ -6,12 +6,22 @@ const HomePage: React.FC = () => {
     const [flights, setFlights] = useState([]);
     const [param1, setParam1] = useState('');
     const [param2, setParam2] = useState('');
-    const url = `http://localhost:4444/flights?origin=${param1}&destination=${param2}`;
+    const [departureTime, setDepartureTime] = useState('');
+    const [arrivalTime, setArrivalTime] = useState('');
 
     const fetchFlights = () => {
         if(param1==param2){
             window.alert('Origin and destination must be different.');
             return;
+        }
+        let url = `http://localhost:4444/flights?origin=${param1}&destination=${param2}`;
+        if (departureTime) {
+            const formattedDepartureTime = new Date(departureTime).toISOString().slice(0,10) + ' 00:00:00';
+            url += `&departure_time=${formattedDepartureTime}`;
+        }
+        if (arrivalTime) {
+            const formattedArrivalTime = new Date(arrivalTime).toISOString().slice(0,10) + ' 00:00:00';
+            url += `&arrival_time=${formattedArrivalTime}`;
         }
         fetch(url)
             .then(response => response.json())
@@ -26,15 +36,23 @@ const HomePage: React.FC = () => {
             .catch(error => console.error('Error fetching flights:', error));
     };
 
-    const formatDate = (dateTimeString: string) => {
-        const date = new Date(dateTimeString);
-        const formatter = new Intl.DateTimeFormat('en-UK', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'numeric',
-            year: 'numeric',
-        });
-        return formatter.format(date);
+    const handleDepartureTimeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setDepartureTime(event.target.value);
+    };
+
+    const handleArrivalTimeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setArrivalTime(event.target.value);
+    };
+
+
+    const formatDateAndTime = (dateTime: string) => {
+        const date = new Date(dateTime);
+        const day = date.toLocaleString('en-us', { weekday: 'long' });
+        const formattedDate = date.toLocaleDateString('en-GB');
+        const hours = date.getHours();
+        const minutes = date.getMinutes();
+        const formattedTime = `${hours < 10 ? '0' + hours : hours}:${minutes < 10 ? '0' + minutes : minutes}`;
+        return `${day}, ${formattedDate}, ${formattedTime}`;
     };
 
     const calculateFlightDuration = (departureDateTime: string, arrivalDateTime: string) => {
@@ -62,22 +80,33 @@ const HomePage: React.FC = () => {
         }
     };
 
+
     return (
         <div className="home-page">
             <div className="input-container">
-                <input type="text" value={param1} onChange={handleParam1Change} />
-                <input type="text" value={param2} onChange={handleParam2Change} />
+                <label htmlFor="origin">Origin:</label>
+                <input type="text" id="origin" value={param1} onChange={handleParam1Change}/>
+                <label htmlFor="destination">Destination:</label>
+                <input type="text" id="destination" value={param2} onChange={handleParam2Change}/>
+                <label htmlFor="departureTime">Departure Date:</label>
+                <input type="date" id="departureTime" value={departureTime} onChange={handleDepartureTimeChange}/>
+
+                <label htmlFor="arrivalTime">Arrival Date:</label>
+                <input type="date" id="arrivalTime" value={arrivalTime} onChange={handleArrivalTimeChange}/>
                 <button onClick={handleFetchClick}>Search</button>
             </div>
+
             {flights.map((flight: any) => (
+
                 <Link key={flight.flight_id}
                       to={`/flight/${flight.flight_id}`}
                       className="flight">
                     <div className="origin">{flight.departure_airport}</div>
                     <div className="destination">{flight.arrival_airport}</div>
-                    <div className="date">{formatDate(flight.departure_datetime)}</div>
+                    <div className="date-time">{formatDateAndTime(flight.departure_datetime)}</div>
                     <div
                         className="duration">Duration: {calculateFlightDuration(flight.departure_datetime, flight.arrival_datetime)}</div>
+                    <div className="basic-price">Price: {flight.price}</div>
                 </Link>
             ))}
         </div>
