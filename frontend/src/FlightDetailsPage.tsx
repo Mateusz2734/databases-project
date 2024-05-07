@@ -97,8 +97,6 @@ const FlightDetailsPage: React.FC = () => {
         const handleClick = () => {
             const reservationCost = seatchartRef.current?.getCartTotal();
             const reservationSeats = seatchartRef.current?.getCart();
-            console.log('test');
-            console.log(flightData.price * 1.5);
 
             if (reservationCost && reservationCost > 0) {
                 navigate(`/Reservation`, { state: { reservationCost, id, reservationSeats } });

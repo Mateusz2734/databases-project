@@ -1,20 +1,38 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { Link } from 'react-router-dom';
 import './css/HomePage.css';
 
+type CountriesType = { [key: string]: string[] };
+type AirportType = { airport_code: string, airport_name: string, city: string, country: string };
+
 const HomePage: React.FC = () => {
     const [flights, setFlights] = useState([]);
-    const [param1, setParam1] = useState('');
-    const [param2, setParam2] = useState('');
     const [departureTime, setDepartureTime] = useState('');
     const [arrivalTime, setArrivalTime] = useState('');
+    const [minPrice, setMinPrice] = useState('');
+    const [maxPrice, setMaxPrice] = useState('');
+
+    const [originCountry, setOriginCountry] = useState('');
+    const [originCity, setOriginCity] = useState('');
+    const [destinationCountry, setDestinationCountry] = useState('');
+    const [destinationCity, setDestinationCity] = useState('');
+
+    const [countries, setCountries] = useState<CountriesType>({});
+    const [originAirport, setOriginAirport] = useState('');
+    const [destinationAirport, setDestinationAirport] = useState('');
+    const [airports, setAirports] = useState<AirportType[]>([]);
+
+    const [originCities, setOriginCities] = useState<string[]>([]);
+    const [destinationCities, setDestinationCities] = useState<string[]>([]);
+    const [originAirports, setOriginAirports] = useState<AirportType[]>([]);
+    const [destinationAirports, setDestinationAirports] = useState<AirportType[]>([]);
 
     const fetchFlights = () => {
-        if(param1==param2){
-            window.alert('Origin and destination must be different.');
+        if(originAirport === destinationAirport){
+            window.alert('Origin and destination airports must be different.');
             return;
         }
-        let url = `http://localhost:4444/flights?origin=${param1}&destination=${param2}`;
+        let url = `http://localhost:4444/flights?origin=${originAirport}&destination=${destinationAirport}`;
         if (departureTime) {
             const formattedDepartureTime = new Date(departureTime).toISOString().slice(0,10) + ' 00:00:00';
             url += `&departure_time=${formattedDepartureTime}`;
@@ -23,6 +41,20 @@ const HomePage: React.FC = () => {
             const formattedArrivalTime = new Date(arrivalTime).toISOString().slice(0,10) + ' 00:00:00';
             url += `&arrival_time=${formattedArrivalTime}`;
         }
+
+        if ((minPrice && !maxPrice) || (!minPrice && maxPrice)) {
+            window.alert('Both min price and max price must be set.');
+            return;
+        }
+
+        if (minPrice && maxPrice && (Number(minPrice) < 0 || Number(minPrice) > Number(maxPrice))) {
+            window.alert('Min price must be greater than or equal to 0 and less than or equal to max price.');
+            return;
+        }
+        if(minPrice && maxPrice){
+            url += `&min_price=${minPrice}&max_price=${maxPrice}`;
+        }
+
         fetch(url)
             .then(response => response.json())
             .then(data => {
@@ -36,6 +68,30 @@ const HomePage: React.FC = () => {
             .catch(error => console.error('Error fetching flights:', error));
     };
 
+    useEffect(() => {
+        fetch('http://localhost:4444/cities')
+            .then(response => response.json())
+            .then(data => setCountries(data.countries))
+            .catch(error => console.error('Error fetching countries:', error));
+    }, []);
+
+
+    useEffect(() => {
+        fetch('http://localhost:4444/airports')
+            .then(response => response.json())
+            .then(data => setAirports(data.airports))
+            .catch(error => console.error('Error fetching airports:', error));
+    }, []);
+
+
+    const handleMinPriceChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setMinPrice(event.target.value);
+    };
+
+    const handleMaxPriceChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setMaxPrice(event.target.value);
+    };
+
     const handleDepartureTimeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setDepartureTime(event.target.value);
     };
@@ -44,6 +100,63 @@ const HomePage: React.FC = () => {
         setArrivalTime(event.target.value);
     };
 
+    const handleOriginCountryChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedCountry = event.target.value;
+        setOriginCountry(selectedCountry);
+        setOriginAirport(''); // Reset the airport when the country changes
+
+        if (selectedCountry && countries[selectedCountry]) {
+            setOriginCities(countries[selectedCountry]);
+        } else {
+            setOriginCities([]);
+        }
+    };
+
+    const handleDestinationCountryChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedCountry = event.target.value;
+        setDestinationCountry(selectedCountry);
+        setDestinationAirport(''); // Reset the airport when the country changes
+
+        if (selectedCountry && countries[selectedCountry]) {
+            setDestinationCities(countries[selectedCountry]);
+        } else {
+            setDestinationCities([]);
+        }
+    };
+
+    const handleOriginCityChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedCity = event.target.value;
+        setOriginCity(selectedCity);
+        setOriginAirport(''); // Reset the airport when the city changes
+
+        if (selectedCity) {
+            const cityAirports = airports.filter(airport => airport.city === selectedCity && airport.country === originCountry);
+            setOriginAirports(cityAirports);
+        } else {
+            setOriginAirports([]);
+        }
+    };
+
+    const handleDestinationCityChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedCity = event.target.value;
+        setDestinationCity(selectedCity);
+        setDestinationAirport(''); // Reset the airport when the city changes
+
+        if (selectedCity) {
+            const cityAirports = airports.filter(airport => airport.city === selectedCity && airport.country === destinationCountry);
+            setDestinationAirports(cityAirports);
+        } else {
+            setDestinationAirports([]);
+        }
+    };
+
+    const handleOriginAirportChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        setOriginAirport(event.target.value);
+    };
+
+    const handleDestinationAirportChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        setDestinationAirport(event.target.value);
+    };
 
     const formatDateAndTime = (dateTime: string) => {
         const date = new Date(dateTime);
@@ -64,37 +177,84 @@ const HomePage: React.FC = () => {
         return `${hours}h ${minutes}m`;
     };
 
-    const handleParam1Change = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setParam1(event.target.value);
-    };
-
-    const handleParam2Change = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setParam2(event.target.value);
-    };
-
     const handleFetchClick = () => {
-        if (param1.length === 3 && param2.length === 3) {
+        // if (origin.length === 3 && destination.length === 3) {
             fetchFlights();
-        } else {
-            window.alert('Both parameters must be 3 characters long.');
-        }
+        // } else {
+        //     window.alert('Both parameters must be 3 characters long.');
+        // }
     };
+
 
 
     return (
         <div className="home-page">
             <div className="input-container">
-                <label htmlFor="origin">Origin:</label>
-                <input type="text" id="origin" value={param1} onChange={handleParam1Change}/>
-                <label htmlFor="destination">Destination:</label>
-                <input type="text" id="destination" value={param2} onChange={handleParam2Change}/>
-                <label htmlFor="departureTime">Departure Date:</label>
-                <input type="date" id="departureTime" value={departureTime} onChange={handleDepartureTimeChange}/>
+                <label htmlFor="originCountry">Origin Country:</label>
+                <select id="originCountry" value={originCountry} onChange={handleOriginCountryChange}
+                        className="input-field">
+                    <option value="">Select a country</option>
+                    {Object.keys(countries).map(country => (
+                        <option key={country} value={country}>{country}</option>
+                    ))}
+                </select>
+                <label htmlFor="originCity">Origin City:</label>
+                <select id="originCity" value={originCity} onChange={handleOriginCityChange} className="input-field"
+                        disabled={!originCountry}>
+                    <option value="">Select a city</option>
+                    {originCities.map(city => (
+                        <option key={city} value={city}>{city}</option>
+                    ))}
+                </select>
+                <label htmlFor="originAirport">Origin Airport:</label>
+                <select id="originAirport" value={originAirport} onChange={handleOriginAirportChange}
+                        className="input-field" disabled={!originCity}>
+                    <option value="">Select an airport</option>
+                    {originAirports.map(airport => (
+                        <option key={airport.airport_code} value={airport.airport_code}>{airport.airport_name}</option>
+                    ))}
+                </select>
+                {/* ... rest of the component ... */}
+                <label htmlFor="destinationCountry">Destination Country:</label>
+                <select id="destinationCountry" value={destinationCountry} onChange={handleDestinationCountryChange}
+                        className="input-field">
+                    <option value="">Select a country</option>
+                    {Object.keys(countries).map(country => (
+                        <option key={country} value={country}>{country}</option>
+                    ))}
+                </select>
+                <label htmlFor="destinationCity">Destination City:</label>
+                <select id="destinationCity" value={destinationCity} onChange={handleDestinationCityChange}
+                        className="input-field" disabled={!destinationCountry}>
+                    <option value="">Select a city</option>
+                    {destinationCities.map(city => (
+                        <option key={city} value={city}>{city}</option>
+                    ))}
+                </select>
+                <label htmlFor="destinationAirport">Destination Airport:</label>
+                <select id="destinationAirport" value={destinationAirport} onChange={handleDestinationAirportChange}
+                        className="input-field" disabled={!destinationCity}>
+                <option value="">Select an airport</option>
+                    {destinationAirports.map(airport => (
+                        <option key={airport.airport_code} value={airport.airport_code}>{airport.airport_name}</option>
+                    ))}
+                </select>
 
-                <label htmlFor="arrivalTime">Arrival Date:</label>
-                <input type="date" id="arrivalTime" value={arrivalTime} onChange={handleArrivalTimeChange}/>
-                <button onClick={handleFetchClick}>Search</button>
+                <label htmlFor="departureTime">Departure:</label>
+                <input type="date" id="departureTime" value={departureTime} onChange={handleDepartureTimeChange}
+                       className="input-field"/>
+                <label htmlFor="arrivalTime">Arrival:</label>
+                <input type="date" id="arrivalTime" value={arrivalTime} onChange={handleArrivalTimeChange}
+                       className="input-field"/>
+                <label htmlFor="minPrice">Min price:</label>
+                <input type="number" id="minPrice" value={minPrice} onChange={handleMinPriceChange}
+                       className="input-field"/>
+                <label htmlFor="maxPrice">Max price:</label>
+                <input type="number" id="maxPrice" value={maxPrice} onChange={handleMaxPriceChange}
+                       className="input-field"/>
+
             </div>
+            <button onClick={handleFetchClick}>Search</button>
 
             {flights.map((flight: any) => (
 
