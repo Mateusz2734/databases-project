@@ -17,6 +17,9 @@ Highcharts.setOptions({
     scrollbar: {
         enabled: false,
     },
+    accessibility: {
+        enabled: false,
+    }
 });
 
 export function Chart(props: { chartData: number[][]; }) {
