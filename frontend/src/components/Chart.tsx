@@ -28,9 +28,6 @@ export function Chart(props: { chartData: number[][]; }) {
     const setBar = () => setType('bar');
 
     const options: Options = {
-        title: {
-            text: 'Income from flights'
-        },
         xAxis: {
             plotLines: [{
                 color: 'black',
