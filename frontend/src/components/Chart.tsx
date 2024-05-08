@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Highcharts, { Options } from 'highcharts/highstock';
 import HighchartsReact from 'highcharts-react-official';
-import moment from 'moment';
+import dayjs from 'dayjs';
 
 Highcharts.setOptions({
     lang: {
@@ -47,7 +47,7 @@ export function Chart(props: { chartData: number[][]; }) {
         },
         tooltip: {
             formatter: function () {
-                return [type === 'line' ? moment(this.x).format("YYYY-MM-DD") : ""].concat(
+                return [type === 'line' ? dayjs(this.x).format("YYYY-MM-DD") : ""].concat(
                     this.points ?
                         this.points.map(function (point) {
                             return point.y?.toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' PLN';
