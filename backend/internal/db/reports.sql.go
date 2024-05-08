@@ -14,7 +14,7 @@ import (
 const getPeriodicEarningsBetweenDates = `-- name: GetPeriodicEarningsBetweenDates :many
 SELECT 
         GREATEST(DATE_TRUNC($1, created_at), $2)::date AS period_start,
-        SUM(f.price * p.value)::bigint AS earnings
+        SUM(f.price * p.value)::numeric AS earnings
 FROM seats s 
 INNER JOIN flight_seats fs ON s.seat_id = fs.seat_id
 INNER JOIN flights f ON fs.flight_id = f.flight_id 
@@ -31,8 +31,8 @@ type GetPeriodicEarningsBetweenDatesParams struct {
 }
 
 type GetPeriodicEarningsBetweenDatesRow struct {
-	PeriodStart pgtype.Date `json:"period_start"`
-	Earnings    int64       `json:"earnings"`
+	PeriodStart pgtype.Date    `json:"period_start"`
+	Earnings    pgtype.Numeric `json:"earnings"`
 }
 
 func (q *Queries) GetPeriodicEarningsBetweenDates(ctx context.Context, arg GetPeriodicEarningsBetweenDatesParams) ([]GetPeriodicEarningsBetweenDatesRow, error) {
@@ -58,16 +58,16 @@ func (q *Queries) GetPeriodicEarningsBetweenDates(ctx context.Context, arg GetPe
 const getPopularDestinations = `-- name: GetPopularDestinations :many
 SELECT f.arrival_airport, COUNT(s.seat_id) as seat_count
 FROM flights f
-JOIN flight_seats s ON f.flight_id = s.flight_id AND departure_datetime BETWEEN $1::string AND $2::string
+JOIN flight_seats s ON f.flight_id = s.flight_id AND departure_datetime BETWEEN $1::date AND $2::date
 GROUP BY f.arrival_airport
 ORDER BY seat_count DESC
 LIMIT $3::int
 `
 
 type GetPopularDestinationsParams struct {
-	StartDate   string `json:"start_date"`
-	EndDate     string `json:"end_date"`
-	CustomLimit int32  `json:"custom_limit"`
+	StartDate   pgtype.Date `json:"start_date"`
+	EndDate     pgtype.Date `json:"end_date"`
+	CustomLimit int32       `json:"custom_limit"`
 }
 
 type GetPopularDestinationsRow struct {
@@ -98,16 +98,16 @@ func (q *Queries) GetPopularDestinations(ctx context.Context, arg GetPopularDest
 const getPopularFlights = `-- name: GetPopularFlights :many
 SELECT f.departure_airport, f.arrival_airport, COUNT(s.seat_id) as seat_count
 FROM flights f
-JOIN flight_seats s ON f.flight_id = s.flight_id AND departure_datetime BETWEEN $1::string AND $2::string
+JOIN flight_seats s ON f.flight_id = s.flight_id AND departure_datetime BETWEEN $1::date AND $2::date
 GROUP BY f.departure_airport, f.arrival_airport
 ORDER BY seat_count DESC
 LIMIT $3::int
 `
 
 type GetPopularFlightsParams struct {
-	StartDate   string `json:"start_date"`
-	EndDate     string `json:"end_date"`
-	CustomLimit int32  `json:"custom_limit"`
+	StartDate   pgtype.Date `json:"start_date"`
+	EndDate     pgtype.Date `json:"end_date"`
+	CustomLimit int32       `json:"custom_limit"`
 }
 
 type GetPopularFlightsRow struct {
@@ -139,12 +139,12 @@ func (q *Queries) GetPopularFlights(ctx context.Context, arg GetPopularFlightsPa
 const getTicketsSoldBetweenDates = `-- name: GetTicketsSoldBetweenDates :one
 SELECT COUNT(seat_id) as seat_count
 FROM flight_seats
-WHERE created_at BETWEEN $1 AND $2
+WHERE created_at BETWEEN $1::date AND $2::date
 `
 
 type GetTicketsSoldBetweenDatesParams struct {
-	StartDate pgtype.Timestamp `json:"start_date"`
-	EndDate   pgtype.Timestamp `json:"end_date"`
+	StartDate pgtype.Date `json:"start_date"`
+	EndDate   pgtype.Date `json:"end_date"`
 }
 
 func (q *Queries) GetTicketsSoldBetweenDates(ctx context.Context, arg GetTicketsSoldBetweenDatesParams) (int64, error) {
@@ -156,7 +156,7 @@ func (q *Queries) GetTicketsSoldBetweenDates(ctx context.Context, arg GetTickets
 
 const getTotalEarningsBetweenDates = `-- name: GetTotalEarningsBetweenDates :many
 SELECT s.seat_type, 
-       SUM(f.price * p.value)::bigint AS earnings_per_seat_type
+       SUM(f.price * p.value)::numeric AS value
 FROM seats s 
 INNER JOIN flight_seats fs ON s.seat_id = fs.seat_id 
 INNER JOIN flights f ON fs.flight_id = f.flight_id 
@@ -171,8 +171,8 @@ type GetTotalEarningsBetweenDatesParams struct {
 }
 
 type GetTotalEarningsBetweenDatesRow struct {
-	SeatType            SeatClass `json:"seat_type"`
-	EarningsPerSeatType int64     `json:"earnings_per_seat_type"`
+	SeatType SeatClass      `json:"seat_type"`
+	Value    pgtype.Numeric `json:"value"`
 }
 
 func (q *Queries) GetTotalEarningsBetweenDates(ctx context.Context, arg GetTotalEarningsBetweenDatesParams) ([]GetTotalEarningsBetweenDatesRow, error) {
@@ -184,7 +184,7 @@ func (q *Queries) GetTotalEarningsBetweenDates(ctx context.Context, arg GetTotal
 	var items []GetTotalEarningsBetweenDatesRow
 	for rows.Next() {
 		var i GetTotalEarningsBetweenDatesRow
-		if err := rows.Scan(&i.SeatType, &i.EarningsPerSeatType); err != nil {
+		if err := rows.Scan(&i.SeatType, &i.Value); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

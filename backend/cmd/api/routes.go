@@ -31,5 +31,7 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("/reservations/:id", app.deleteReservation, "DELETE")
 	mux.HandleFunc("/reservations/:id", app.editReservation, "PATCH")
 
+	mux.HandleFunc("/reports", app.getReports, "GET")
+
 	return mux
 }
