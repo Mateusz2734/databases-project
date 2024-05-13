@@ -28,6 +28,11 @@ const HomePage: React.FC = () => {
     const [destinationAirports, setDestinationAirports] = useState<AirportType[]>([]);
 
     const fetchFlights = () => {
+        if (!originCountry || !destinationCountry) {
+            window.alert('Both origin and destination countries must be set.');
+            return;
+        }
+
         if(originAirport === destinationAirport){
             window.alert('Origin and destination airports must be different.');
             return;
@@ -77,12 +82,42 @@ const HomePage: React.FC = () => {
 
 
     useEffect(() => {
-        fetch('http://localhost:4444/airports')
-            .then(response => response.json())
-            .then(data => setAirports(data.airports))
-            .catch(error => console.error('Error fetching airports:', error));
-    }, []);
+        if (!originCity) {
+            setOriginAirports([]);
+            return;
+        }
 
+        let url = 'http://localhost:4444/airports';
+        const params = new URLSearchParams();
+
+        params.append('city', originCity);
+
+        url += `?${params.toString()}`;
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => setOriginAirports(data.airports))
+            .catch(error => console.error('Error fetching airports:', error));
+    }, [originCity]);
+
+    useEffect(() => {
+        if (!destinationCity) {
+            setDestinationAirports([]);
+            return;
+        }
+
+        let url = 'http://localhost:4444/airports';
+        const params = new URLSearchParams();
+
+        params.append('city', destinationCity);
+
+        url += `?${params.toString()}`;
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => setDestinationAirports(data.airports))
+            .catch(error => console.error('Error fetching airports:', error));
+    }, [destinationCity]);
 
     const handleMinPriceChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setMinPrice(event.target.value);
@@ -178,17 +213,13 @@ const HomePage: React.FC = () => {
     };
 
     const handleFetchClick = () => {
-        // if (origin.length === 3 && destination.length === 3) {
-            fetchFlights();
-        // } else {
-        //     window.alert('Both parameters must be 3 characters long.');
-        // }
+        fetchFlights();
     };
-
 
 
     return (
         <div className="home-page">
+            <h1>Search Flights</h1>
             <div className="input-container">
                 <label htmlFor="originCountry">Origin Country:</label>
                 <select id="originCountry" value={originCountry} onChange={handleOriginCountryChange}
@@ -214,7 +245,6 @@ const HomePage: React.FC = () => {
                         <option key={airport.airport_code} value={airport.airport_code}>{airport.airport_name}</option>
                     ))}
                 </select>
-                {/* ... rest of the component ... */}
                 <label htmlFor="destinationCountry">Destination Country:</label>
                 <select id="destinationCountry" value={destinationCountry} onChange={handleDestinationCountryChange}
                         className="input-field">
@@ -261,8 +291,8 @@ const HomePage: React.FC = () => {
                 <Link key={flight.flight_id}
                       to={`/flight/${flight.flight_id}`}
                       className="flight">
-                    <div className="origin">{flight.departure_airport}</div>
-                    <div className="destination">{flight.arrival_airport}</div>
+                    <div className="origin">{originCity}</div>
+                    <div className="destination">{destinationCity}</div>
                     <div className="date-time">{formatDateAndTime(flight.departure_datetime)}</div>
                     <div
                         className="duration">Duration: {calculateFlightDuration(flight.departure_datetime, flight.arrival_datetime)}</div>
