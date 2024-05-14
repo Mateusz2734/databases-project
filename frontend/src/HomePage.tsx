@@ -33,6 +33,11 @@ const HomePage: React.FC = () => {
             return;
         }
 
+        if (!originAirport || !destinationAirport) {
+            window.alert('Both origin and destination airports must be chosen.');
+            return;
+        }
+
         if(originAirport === destinationAirport){
             window.alert('Origin and destination airports must be different.');
             return;
@@ -150,7 +155,7 @@ const HomePage: React.FC = () => {
     const handleDestinationCountryChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedCountry = event.target.value;
         setDestinationCountry(selectedCountry);
-        setDestinationAirport(''); // Reset the airport when the country changes
+        setDestinationAirport('');
 
         if (selectedCountry && countries[selectedCountry]) {
             setDestinationCities(countries[selectedCountry]);
@@ -162,7 +167,7 @@ const HomePage: React.FC = () => {
     const handleOriginCityChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedCity = event.target.value;
         setOriginCity(selectedCity);
-        setOriginAirport(''); // Reset the airport when the city changes
+        setOriginAirport('');
 
         if (selectedCity) {
             const cityAirports = airports.filter(airport => airport.city === selectedCity && airport.country === originCountry);
@@ -175,7 +180,7 @@ const HomePage: React.FC = () => {
     const handleDestinationCityChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedCity = event.target.value;
         setDestinationCity(selectedCity);
-        setDestinationAirport(''); // Reset the airport when the city changes
+        setDestinationAirport('');
 
         if (selectedCity) {
             const cityAirports = airports.filter(airport => airport.city === selectedCity && airport.country === destinationCountry);
