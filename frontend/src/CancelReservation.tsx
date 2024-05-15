@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams , Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import './css/HomePage.css';
 
 interface Flight {
@@ -43,6 +44,8 @@ const CancelReservation: React.FC = () => {
     const [reservation, setReservation] = useState<Reservation | null>(null);
     const [seats, setSeats] = useState<Seat[]>([]);
     const [searchedReservationId, setSearchedReservationId] = useState<string>('');
+    const [flightId, setFlightId] = useState<string>('');
+    const navigate = useNavigate();
 
     const handleSearchClick = async () => {
         try {
@@ -51,10 +54,10 @@ const CancelReservation: React.FC = () => {
                 throw new Error('Error searching reservation');
             }
             const data = await response.json();
-            console.log(JSON.stringify(data));
             setFlight(data.flight);
             setReservation(data.reservation);
             setSeats(data.seats);
+            setFlightId(data.flight.flight_id);
         } catch (error) {
             console.error('Error searching reservation:', error);
             window.alert('Error searching reservation. Please try again later.');
@@ -84,6 +87,11 @@ const CancelReservation: React.FC = () => {
             }
         }
     };
+
+    const handleUpdateClick = async () => {
+        navigate(`/update`, { state: { searchedReservationId , flightId} });
+    };
+
 
     if (!flight || !reservation) {
         return (
@@ -147,6 +155,10 @@ const CancelReservation: React.FC = () => {
             </table>
 
             <button onClick={handleCancelClick} type="submit">Cancel Reservation</button>
+            {/*<Link to={`/update/`}><button type="button">Update Reservation</button></Link>*/}
+            <button onClick={handleUpdateClick} type="submit">Change Reservation</button>
+            {/*<button onClick={handleCancelClick} type="submit">Cancel Reservation</button>*/}
+
         </div>
     );
 };
