@@ -1,7 +1,8 @@
 import React, {useState, useEffect, useRef} from 'react';
 import {useLocation, useNavigate, useParams} from 'react-router-dom';
 import Seatchart from './Seatchart';
-import SeatchartJS, {SeatType} from "seatchart";
+import SeatchartJS, {Events, Options, SeatType, SubmitEvent} from "seatchart";
+import './css/HomePage.css';
 
 interface Flight {
     flight_id: number;
@@ -56,7 +57,6 @@ const UpdateReservation: React.FC = () => {
                 setFlight(data.flight);
                 setReservation(data.reservation);
                 setSeats(data.seats);
-
                 setFlightId(data.flight.flight_id);
                 console.log('Fetching flight data:', flightId);
 
@@ -69,7 +69,6 @@ const UpdateReservation: React.FC = () => {
     }, [searchedReservationId]);
 
     useEffect(() => {
-        // console.log('Fetching flight:', flightId);
         if(!flightId) return;
         const fetchFlightData = async () => {
             try {
@@ -84,12 +83,36 @@ const UpdateReservation: React.FC = () => {
                 console.error(error);
             }
         };
-
         fetchFlightData();
     }, [flightId]);
 
+    useEffect(() => {
+        console.log("xd")
+        if (seatchartRef.current) {
+            console.log("xd2")
+            seatchartRef.current?.element.querySelector('.sc-cart-btn.sc-cart-btn-submit')?.addEventListener('click', handleUpdateClick);
+        }
+    },[seatchartRef.current]);
 
-    const options = flightData
+
+    const defaultOptions: Options = {
+        map: {
+            rows: 0,
+            columns: 0,
+            seatTypes: {
+                default: {
+                    label: 'Default',
+                    cssClass: 'default',
+                    price: 0,
+                },
+            },
+            reservedSeats: [],
+            rowSpacers: [],
+            columnSpacers: [],
+        },
+    };
+
+    const options: Options = flightData
         ? {
             map: {
                 rows: flightData.plane.diagram_metadata.rows,
@@ -120,31 +143,20 @@ const UpdateReservation: React.FC = () => {
                 rowSpacers: flightData.plane.diagram_metadata.rowSpacers,
                 columnSpacers: flightData.plane.diagram_metadata.columnSpacers,
             }
-        }
-        : null;
+        } : defaultOptions;
 
-    // const handleUpdateClick = async () => {
     const handleUpdateClick = async () => {
-        // Get the selected seats from the Seatchart component
-        // const selectedSeats = seatchartRef.current?.getSelectedSeats();
         const selectedSeats = seatchartRef.current?.getCart();
-        // console.log('Selected seats:', selectedSeats);
-        console.log(JSON.stringify(selectedSeats));
         let formattedSeats: { row: number; column: number; }[];
         if (selectedSeats) {
             formattedSeats = selectedSeats.map(item => ({
                 row: item.index.row,
                 column: item.index.col
             }));
-            // console.log(transformedData);
         } else {
             formattedSeats = [];
             console.log("No selected seats.");
         }
-        // const formattedSeats = selectedSeats.map((seat: any) => ({
-        //     row: seat.index.row,
-        //     col: seat.index.col,
-        // }));
 
         try {
             const response = await fetch(`http://localhost:4444/reservations/${searchedReservationId}`, {
@@ -166,10 +178,16 @@ const UpdateReservation: React.FC = () => {
             window.alert('Error updating reservation. Please try again later.');
         }
     };
-    // };
+
+    const handleBackClick = () => {
+        navigate(-1);
+    };
 
     return (
-        <div >
+        <div className="updateFlight">
+            <button className={'backButton'} onClick={handleBackClick}>
+                Back
+            </button>
             <h1>Update Reservation</h1>
             {reservation && (
                 <div>
@@ -186,19 +204,21 @@ const UpdateReservation: React.FC = () => {
                         {seats.map((seat, index) => (
                             <tr key={index}>
                                 <td>{seat.seat_type}</td>
-                                <td>{seat.row+1}</td>
-                                <td>{seat.col+1}</td>
+                                <td>{seat.row + 1}</td>
+                                <td>{seat.col + 1}</td>
                             </tr>
                         ))}
                         </tbody>
                     </table>
                 </div>
             )}
-            {options && <Seatchart ref={seatchartRef} options={options}/>}
-
-            <button onClick={handleUpdateClick}>Update Reservation</button>
+            {flightData && <Seatchart ref={seatchartRef} options={options}/>}
+            <button className={'updateButton'} onClick={handleUpdateClick}>
+                Update
+            </button>
         </div>
     );
 };
 
 export default UpdateReservation;
+

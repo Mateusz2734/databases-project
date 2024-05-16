@@ -55,7 +55,7 @@ const ReservationConfirm: React.FC = () => {
         }));
 
         const reservationData = {
-            flight_id: Number(id), // Convert id to a number
+            flight_id: Number(id),
             firstname: name,
             lastname: surname,
             email: email,
@@ -76,8 +76,9 @@ const ReservationConfirm: React.FC = () => {
             } else {
                 window.alert('Error confirming reservation: ' + data.message);
             }
-        } else {
-            throw new Error('Error confirming reservation');
+        }
+        else {
+            window.alert('Error confirming reservation: ' + data.message);
         }
     };
     return (

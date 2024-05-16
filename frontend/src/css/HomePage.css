@@ -100,20 +100,24 @@ button:hover {
     background-color: #B71C1C;
 }
 
-.cancel-reservation-page table {
-    width: 100%;
-    margin-top: 20px;
-    border-collapse: collapse;
+.updateFlight{
+    margin: 0 auto;
+    width: 60%;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #ccc;
 }
 
-.cancel-reservation-page table, .cancel-reservation-page th, .cancel-reservation-page td {
-    border: 1px solid #ddd;
-    padding: 8px;
-}
-.cancel-reservation-page th {
-    padding-top: 12px;
-    padding-bottom: 12px;
-    text-align: left;
-    background-color: #D32F2F; /* changed from #FF0000 to #D32F2F */
+.backButton{
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    background-color: #e53c4a;
     color: white;
+    cursor: pointer;
+    font-size: 0.9em;
+    height: 40px;
+    margin: 5px;
+    display: inline-block;
 }

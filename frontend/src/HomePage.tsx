@@ -42,6 +42,9 @@ const HomePage: React.FC = () => {
             window.alert('Origin and destination airports must be different.');
             return;
         }
+
+        const currentDate = new Date();
+
         let url = `http://localhost:4444/flights?origin=${originAirport}&destination=${destinationAirport}`;
         if (departureTime) {
             const formattedDepartureTime = new Date(departureTime).toISOString().slice(0,10) + ' 00:00:00';
@@ -72,7 +75,12 @@ const HomePage: React.FC = () => {
                 if (data.message === 'No flights found') {
                     window.alert('No flights found with the given parameters.');
                 } else {
-                    setFlights(data);
+                    // Filtrownanie
+                    const upcomingFlights = data.filter((flight: any) => {
+                        const departureDateTime = new Date(flight.departure_datetime);
+                        return departureDateTime > currentDate;
+                    });
+                    setFlights(upcomingFlights);
                 }
             })
             .catch(error => console.error('Error fetching flights:', error));
@@ -220,7 +228,6 @@ const HomePage: React.FC = () => {
     const handleFetchClick = () => {
         fetchFlights();
     };
-
 
     return (
         <div className="home-page">
