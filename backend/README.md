@@ -261,7 +261,7 @@ make run/live
   - **Query Parameters:** none
 
 - **PATCH** `/reservations/:id`
-  - Updates details of a specific reservation.
+  - Removes `seats` from a specified reservation.
   - **Request Body:**
     ```json
     {
