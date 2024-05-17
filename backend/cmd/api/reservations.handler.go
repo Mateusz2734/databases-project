@@ -50,9 +50,7 @@ func (app *application) createReservation(w http.ResponseWriter, r *http.Request
 	}
 	defer tx.Rollback(r.Context())
 
-	qtx := app.db.WithTx(tx)
-
-	flight, err := qtx.GetFlightById(r.Context(), input.FlightID)
+	flight, err := app.db.GetFlightById(r.Context(), tx, input.FlightID)
 	if err != nil && err != pgx.ErrNoRows {
 		app.serverError(w, r, err)
 		return
@@ -70,7 +68,7 @@ func (app *application) createReservation(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	allSeats, err := qtx.GetSeatIDs(r.Context(), db.GetSeatIDsParams{Rows: rows, Cols: cols, AirplaneID: flight.AirplaneID.Int32})
+	allSeats, err := app.db.GetSeatIDs(r.Context(), tx, db.GetSeatIDsParams{Rows: rows, Cols: cols, AirplaneID: flight.AirplaneID.Int32})
 	if err != nil && err != pgx.ErrNoRows {
 		app.serverError(w, r, err)
 		return
@@ -89,7 +87,7 @@ func (app *application) createReservation(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	unavailableIDs, err := qtx.CheckIfUnavailable(r.Context(), db.CheckIfUnavailableParams{SeatIds: seatIDs, FlightID: input.FlightID})
+	unavailableIDs, err := app.db.CheckIfUnavailable(r.Context(), tx, db.CheckIfUnavailableParams{SeatIds: seatIDs, FlightID: input.FlightID})
 	if err != nil {
 		app.serverError(w, r, err)
 		return
@@ -117,7 +115,7 @@ func (app *application) createReservation(w http.ResponseWriter, r *http.Request
 			Valid:             true,
 		},
 	}
-	reservation, err := qtx.AddReservation(r.Context(), params1)
+	reservation, err := app.db.AddReservation(r.Context(), tx, params1)
 	if err != nil {
 		app.serverError(w, r, err)
 		return
@@ -128,7 +126,7 @@ func (app *application) createReservation(w http.ResponseWriter, r *http.Request
 		seatsParams = append(seatsParams, db.AddReservationSeatsParams{ReservationID: reservation.ReservationID, SeatID: seatID})
 	}
 
-	_, err = qtx.AddReservationSeats(r.Context(), seatsParams)
+	_, err = app.db.AddReservationSeats(r.Context(), tx, seatsParams)
 	if err != nil {
 		app.serverError(w, r, err)
 		return
@@ -143,7 +141,7 @@ func (app *application) createReservation(w http.ResponseWriter, r *http.Request
 		})
 	}
 
-	_, err = qtx.ReserveFlightSeats(r.Context(), reserveParams)
+	_, err = app.db.ReserveFlightSeats(r.Context(), tx, reserveParams)
 	if err != nil {
 		app.serverError(w, r, err)
 		return
@@ -200,9 +198,7 @@ func (app *application) editReservation(w http.ResponseWriter, r *http.Request) 
 	}
 	defer tx.Rollback(r.Context())
 
-	qtx := app.db.WithTx(tx)
-
-	data, err := qtx.GetReservationByID(r.Context(), int32(reservationIDint))
+	data, err := app.db.GetReservationByID(r.Context(), tx, int32(reservationIDint))
 	reservation := data.Reservation
 
 	if err != nil && err != pgx.ErrNoRows {
@@ -218,13 +214,13 @@ func (app *application) editReservation(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	reservationFlight, err := qtx.GetFlightById(r.Context(), reservation.FlightID.Int32)
+	reservationFlight, err := app.db.GetFlightById(r.Context(), tx, reservation.FlightID.Int32)
 	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
-	allSeats, err := qtx.GetSeatIDs(r.Context(), db.GetSeatIDsParams{Rows: rows, Cols: cols, AirplaneID: reservationFlight.AirplaneID.Int32})
+	allSeats, err := app.db.GetSeatIDs(r.Context(), tx, db.GetSeatIDsParams{Rows: rows, Cols: cols, AirplaneID: reservationFlight.AirplaneID.Int32})
 	if err != nil && err != pgx.ErrNoRows {
 		app.serverError(w, r, err)
 		return
@@ -238,13 +234,13 @@ func (app *application) editReservation(w http.ResponseWriter, r *http.Request) 
 	}
 
 	params1 := db.DeleteReservationSeatsParams{ReservationID: int32(reservationIDint), SeatIds: seatIDs}
-	if err = qtx.DeleteReservationSeats(r.Context(), params1); err != nil {
+	if err = app.db.DeleteReservationSeats(r.Context(), tx, params1); err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
 	params2 := db.DeleteFlightSeatsParams{SeatIds: seatIDs, FlightID: reservation.FlightID.Int32}
-	if err = qtx.DeleteFlightSeats(r.Context(), params2); err != nil {
+	if err = app.db.DeleteFlightSeats(r.Context(), tx, params2); err != nil {
 		app.serverError(w, r, err)
 		return
 	}
@@ -280,9 +276,7 @@ func (app *application) deleteReservation(w http.ResponseWriter, r *http.Request
 	}
 	defer tx.Rollback(r.Context())
 
-	qtx := app.db.WithTx(tx)
-
-	data, err := qtx.GetReservationByID(r.Context(), int32(reservationIDint))
+	data, err := app.db.GetReservationByID(r.Context(), tx, int32(reservationIDint))
 	if err != nil && err != pgx.ErrNoRows {
 		app.serverError(w, r, err)
 		return
@@ -295,19 +289,19 @@ func (app *application) deleteReservation(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	deleted, err := qtx.DeleteAllReservationSeats(r.Context(), reservation.ReservationID)
+	deleted, err := app.db.DeleteAllReservationSeats(r.Context(), tx, reservation.ReservationID)
 	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
 	params := db.DeleteFlightSeatsParams{SeatIds: deleted, FlightID: reservation.FlightID.Int32}
-	if err = qtx.DeleteFlightSeats(r.Context(), params); err != nil {
+	if err = app.db.DeleteFlightSeats(r.Context(), tx, params); err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
-	if err = qtx.DeleteReservation(r.Context(), reservation.ReservationID); err != nil {
+	if err = app.db.DeleteReservation(r.Context(), tx, reservation.ReservationID); err != nil {
 		app.serverError(w, r, err)
 		return
 	}
@@ -336,7 +330,7 @@ func (app *application) getReservation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reservation, err := app.db.GetReservationByID(r.Context(), int32(reservationIDint))
+	reservation, err := app.db.GetReservationByID(r.Context(), app.db.Pool, int32(reservationIDint))
 	if err != nil {
 		app.serverError(w, r, err)
 		return
@@ -347,7 +341,7 @@ func (app *application) getReservation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	seats, err := app.db.GetReservationSeats(r.Context(), reservation.Reservation.ReservationID)
+	seats, err := app.db.GetReservationSeats(r.Context(), app.db.Pool, reservation.Reservation.ReservationID)
 	if err != nil {
 		app.serverError(w, r, err)
 		return
@@ -384,7 +378,7 @@ func (app *application) getClientReservations(w http.ResponseWriter, r *http.Req
 		Firstname: firstname,
 		Lastname:  lastname,
 	}
-	reservations, err := app.db.GetCustomerReservations(r.Context(), params)
+	reservations, err := app.db.GetCustomerReservations(r.Context(), app.db.Pool, params)
 	if err != nil {
 		app.serverError(w, r, err)
 		return

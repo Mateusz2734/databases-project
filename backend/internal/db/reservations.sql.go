@@ -25,8 +25,8 @@ type AddReservationParams struct {
 	Status    NullReservationStatus `json:"status"`
 }
 
-func (q *Queries) AddReservation(ctx context.Context, arg AddReservationParams) (Reservation, error) {
-	row := q.db.QueryRow(ctx, addReservation,
+func (q *Queries) AddReservation(ctx context.Context, db DBTX, arg AddReservationParams) (Reservation, error) {
+	row := db.QueryRow(ctx, addReservation,
 		arg.FlightID,
 		arg.Firstname,
 		arg.Lastname,
@@ -50,8 +50,8 @@ const deleteReservation = `-- name: DeleteReservation :exec
 DELETE FROM reservations WHERE reservation_id = $1::int
 `
 
-func (q *Queries) DeleteReservation(ctx context.Context, reservationID int32) error {
-	_, err := q.db.Exec(ctx, deleteReservation, reservationID)
+func (q *Queries) DeleteReservation(ctx context.Context, db DBTX, reservationID int32) error {
+	_, err := db.Exec(ctx, deleteReservation, reservationID)
 	return err
 }
 
@@ -81,8 +81,8 @@ type GetCustomerReservationsRow struct {
 	DepartureDatetime pgtype.Timestamp `json:"departure_datetime"`
 }
 
-func (q *Queries) GetCustomerReservations(ctx context.Context, arg GetCustomerReservationsParams) ([]GetCustomerReservationsRow, error) {
-	rows, err := q.db.Query(ctx, getCustomerReservations, arg.Email, arg.Firstname, arg.Lastname)
+func (q *Queries) GetCustomerReservations(ctx context.Context, db DBTX, arg GetCustomerReservationsParams) ([]GetCustomerReservationsRow, error) {
+	rows, err := db.Query(ctx, getCustomerReservations, arg.Email, arg.Firstname, arg.Lastname)
 	if err != nil {
 		return nil, err
 	}
@@ -124,8 +124,8 @@ type GetReservationByIDRow struct {
 	Flight      Flight      `json:"flight"`
 }
 
-func (q *Queries) GetReservationByID(ctx context.Context, reservationID int32) (GetReservationByIDRow, error) {
-	row := q.db.QueryRow(ctx, getReservationByID, reservationID)
+func (q *Queries) GetReservationByID(ctx context.Context, db DBTX, reservationID int32) (GetReservationByIDRow, error) {
+	row := db.QueryRow(ctx, getReservationByID, reservationID)
 	var i GetReservationByIDRow
 	err := row.Scan(
 		&i.Reservation.ReservationID,

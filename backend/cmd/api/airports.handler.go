@@ -18,7 +18,7 @@ func (app *application) getFilteredAirports(w http.ResponseWriter, r *http.Reque
 		FilterByCity:    city != "",
 	}
 
-	airports, err := app.db.GetAirportsWithFilters(r.Context(), params)
+	airports, err := app.db.GetAirportsWithFilters(r.Context(), app.db.Pool, params)
 
 	if err != nil {
 		app.serverError(w, r, err)

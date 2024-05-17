@@ -17,6 +17,7 @@ sql:
         output_db_file_name: "queries.go"
         emit_json_tags: true
         json_tags_case_style: "snake"
+        emit_methods_with_db_argument: true
         overrides:
           - db_type: "jsonb"
             go_type: "encoding/json.RawMessage"

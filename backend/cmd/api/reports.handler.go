@@ -43,14 +43,12 @@ func (app *application) getReports(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback(r.Context())
 
-	qtx := app.db.WithTx(tx)
-
 	args := db.GetPeriodicEarningsBetweenDatesParams{
 		Type:      "day",
 		StartDate: pgtype.Date{Time: time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC), Valid: true},
 		EndDate:   pgtype.Date{Time: time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC), Valid: true},
 	}
-	earnings, err := qtx.GetPeriodicEarningsBetweenDates(r.Context(), args)
+	earnings, err := app.db.GetPeriodicEarningsBetweenDates(r.Context(), tx, args)
 
 	if err != nil {
 		app.serverError(w, r, err)
@@ -67,25 +65,25 @@ func (app *application) getReports(w http.ResponseWriter, r *http.Request) {
 		periodicEarnings = append(periodicEarnings, [2]float64{float64(e.PeriodStart.Time.UnixMilli()), float64(val.Float64)})
 	}
 
-	totalEarnings, err := qtx.GetTotalEarningsBetweenDates(r.Context(), db.GetTotalEarningsBetweenDatesParams{StartDate: start, EndDate: end})
+	totalEarnings, err := app.db.GetTotalEarningsBetweenDates(r.Context(), tx, db.GetTotalEarningsBetweenDatesParams{StartDate: start, EndDate: end})
 	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
-	ticketsSold, err := qtx.GetTicketsSoldBetweenDates(r.Context(), db.GetTicketsSoldBetweenDatesParams{StartDate: start, EndDate: end})
+	ticketsSold, err := app.db.GetTicketsSoldBetweenDates(r.Context(), tx, db.GetTicketsSoldBetweenDatesParams{StartDate: start, EndDate: end})
 	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
-	popularDestinations, err := qtx.GetPopularDestinations(r.Context(), db.GetPopularDestinationsParams{StartDate: start, EndDate: end, CustomLimit: int32(limitInt)})
+	popularDestinations, err := app.db.GetPopularDestinations(r.Context(), tx, db.GetPopularDestinationsParams{StartDate: start, EndDate: end, CustomLimit: int32(limitInt)})
 	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
-	popularFlights, err := qtx.GetPopularFlights(r.Context(), db.GetPopularFlightsParams{StartDate: start, EndDate: end, CustomLimit: int32(limitInt)})
+	popularFlights, err := app.db.GetPopularFlights(r.Context(), tx, db.GetPopularFlightsParams{StartDate: start, EndDate: end, CustomLimit: int32(limitInt)})
 	if err != nil {
 		app.serverError(w, r, err)
 		return

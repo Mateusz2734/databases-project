@@ -13,8 +13,8 @@ const checkIfAirportsExist = `-- name: CheckIfAirportsExist :many
 SELECT airport_code FROM airports WHERE airport_code = ANY($1)
 `
 
-func (q *Queries) CheckIfAirportsExist(ctx context.Context, airportCodes []string) ([]string, error) {
-	rows, err := q.db.Query(ctx, checkIfAirportsExist, airportCodes)
+func (q *Queries) CheckIfAirportsExist(ctx context.Context, db DBTX, airportCodes []string) ([]string, error) {
+	rows, err := db.Query(ctx, checkIfAirportsExist, airportCodes)
 	if err != nil {
 		return nil, err
 	}
@@ -46,8 +46,8 @@ type GetAirportsWithFiltersParams struct {
 	FilterByCountry bool   `json:"filter_by_country"`
 }
 
-func (q *Queries) GetAirportsWithFilters(ctx context.Context, arg GetAirportsWithFiltersParams) ([]Airport, error) {
-	rows, err := q.db.Query(ctx, getAirportsWithFilters,
+func (q *Queries) GetAirportsWithFilters(ctx context.Context, db DBTX, arg GetAirportsWithFiltersParams) ([]Airport, error) {
+	rows, err := db.Query(ctx, getAirportsWithFilters,
 		arg.City,
 		arg.FilterByCity,
 		arg.Country,
@@ -89,8 +89,8 @@ type GetAvailableCitiesWithCountriesRow struct {
 	Country string `json:"country"`
 }
 
-func (q *Queries) GetAvailableCitiesWithCountries(ctx context.Context) ([]GetAvailableCitiesWithCountriesRow, error) {
-	rows, err := q.db.Query(ctx, getAvailableCitiesWithCountries)
+func (q *Queries) GetAvailableCitiesWithCountries(ctx context.Context, db DBTX) ([]GetAvailableCitiesWithCountriesRow, error) {
+	rows, err := db.Query(ctx, getAvailableCitiesWithCountries)
 	if err != nil {
 		return nil, err
 	}

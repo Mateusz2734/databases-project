@@ -38,8 +38,8 @@ func (r iteratorForAddReservationSeats) Err() error {
 	return nil
 }
 
-func (q *Queries) AddReservationSeats(ctx context.Context, arg []AddReservationSeatsParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"reservation_seats"}, []string{"reservation_id", "seat_id"}, &iteratorForAddReservationSeats{rows: arg})
+func (q *Queries) AddReservationSeats(ctx context.Context, db DBTX, arg []AddReservationSeatsParams) (int64, error) {
+	return db.CopyFrom(ctx, []string{"reservation_seats"}, []string{"reservation_id", "seat_id"}, &iteratorForAddReservationSeats{rows: arg})
 }
 
 // iteratorForReserveFlightSeats implements pgx.CopyFromSource.
@@ -71,6 +71,6 @@ func (r iteratorForReserveFlightSeats) Err() error {
 	return nil
 }
 
-func (q *Queries) ReserveFlightSeats(ctx context.Context, arg []ReserveFlightSeatsParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"flight_seats"}, []string{"flight_id", "seat_id"}, &iteratorForReserveFlightSeats{rows: arg})
+func (q *Queries) ReserveFlightSeats(ctx context.Context, db DBTX, arg []ReserveFlightSeatsParams) (int64, error) {
+	return db.CopyFrom(ctx, []string{"flight_seats"}, []string{"flight_id", "seat_id"}, &iteratorForReserveFlightSeats{rows: arg})
 }

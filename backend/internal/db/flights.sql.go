@@ -25,8 +25,8 @@ type AddFlightParams struct {
 	Price             pgtype.Numeric   `json:"price"`
 }
 
-func (q *Queries) AddFlight(ctx context.Context, arg AddFlightParams) error {
-	_, err := q.db.Exec(ctx, addFlight,
+func (q *Queries) AddFlight(ctx context.Context, db DBTX, arg AddFlightParams) error {
+	_, err := db.Exec(ctx, addFlight,
 		arg.DepartureAirport,
 		arg.ArrivalAirport,
 		arg.DepartureDatetime,
@@ -42,8 +42,8 @@ DELETE FROM flights
 WHERE flight_id = $1
 `
 
-func (q *Queries) DeleteFlight(ctx context.Context, flightID int32) error {
-	_, err := q.db.Exec(ctx, deleteFlight, flightID)
+func (q *Queries) DeleteFlight(ctx context.Context, db DBTX, flightID int32) error {
+	_, err := db.Exec(ctx, deleteFlight, flightID)
 	return err
 }
 
@@ -53,8 +53,8 @@ FROM flights AS f
 WHERE f.flight_id = $1
 `
 
-func (q *Queries) GetFlightById(ctx context.Context, flightID int32) (Flight, error) {
-	row := q.db.QueryRow(ctx, getFlightById, flightID)
+func (q *Queries) GetFlightById(ctx context.Context, db DBTX, flightID int32) (Flight, error) {
+	row := db.QueryRow(ctx, getFlightById, flightID)
 	var i Flight
 	err := row.Scan(
 		&i.FlightID,
@@ -95,8 +95,8 @@ type GetFlightsWithFiltersParams struct {
 	FilterByPrice             bool             `json:"filter_by_price"`
 }
 
-func (q *Queries) GetFlightsWithFilters(ctx context.Context, arg GetFlightsWithFiltersParams) ([]Flight, error) {
-	rows, err := q.db.Query(ctx, getFlightsWithFilters,
+func (q *Queries) GetFlightsWithFilters(ctx context.Context, db DBTX, arg GetFlightsWithFiltersParams) ([]Flight, error) {
+	rows, err := db.Query(ctx, getFlightsWithFilters,
 		arg.FromAirport,
 		arg.FilterByFromAirport,
 		arg.ToAirport,
@@ -148,8 +148,8 @@ type UpdateFlightParams struct {
 	FlightID          int32            `json:"flight_id"`
 }
 
-func (q *Queries) UpdateFlight(ctx context.Context, arg UpdateFlightParams) error {
-	_, err := q.db.Exec(ctx, updateFlight,
+func (q *Queries) UpdateFlight(ctx context.Context, db DBTX, arg UpdateFlightParams) error {
+	_, err := db.Exec(ctx, updateFlight,
 		arg.DepartureDatetime,
 		arg.ArrivalDatetime,
 		arg.Price,

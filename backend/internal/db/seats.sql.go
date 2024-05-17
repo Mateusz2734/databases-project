@@ -27,8 +27,8 @@ type CheckIfUnavailableParams struct {
 	SeatIds  []int32 `json:"seat_ids"`
 }
 
-func (q *Queries) CheckIfUnavailable(ctx context.Context, arg CheckIfUnavailableParams) ([]pgtype.Int4, error) {
-	rows, err := q.db.Query(ctx, checkIfUnavailable, arg.FlightID, arg.SeatIds)
+func (q *Queries) CheckIfUnavailable(ctx context.Context, db DBTX, arg CheckIfUnavailableParams) ([]pgtype.Int4, error) {
+	rows, err := db.Query(ctx, checkIfUnavailable, arg.FlightID, arg.SeatIds)
 	if err != nil {
 		return nil, err
 	}
@@ -53,8 +53,8 @@ WHERE flight_id = $1::int
 RETURNING flight_seats.seat_id::int
 `
 
-func (q *Queries) DeleteAllFlightSeats(ctx context.Context, flightID int32) ([]int32, error) {
-	rows, err := q.db.Query(ctx, deleteAllFlightSeats, flightID)
+func (q *Queries) DeleteAllFlightSeats(ctx context.Context, db DBTX, flightID int32) ([]int32, error) {
+	rows, err := db.Query(ctx, deleteAllFlightSeats, flightID)
 	if err != nil {
 		return nil, err
 	}
@@ -79,8 +79,8 @@ WHERE reservation_id = $1::int
 RETURNING reservation_seats.seat_id::int
 `
 
-func (q *Queries) DeleteAllReservationSeats(ctx context.Context, reservationID int32) ([]int32, error) {
-	rows, err := q.db.Query(ctx, deleteAllReservationSeats, reservationID)
+func (q *Queries) DeleteAllReservationSeats(ctx context.Context, db DBTX, reservationID int32) ([]int32, error) {
+	rows, err := db.Query(ctx, deleteAllReservationSeats, reservationID)
 	if err != nil {
 		return nil, err
 	}
@@ -110,8 +110,8 @@ type DeleteFlightSeatsParams struct {
 	SeatIds  []int32 `json:"seat_ids"`
 }
 
-func (q *Queries) DeleteFlightSeats(ctx context.Context, arg DeleteFlightSeatsParams) error {
-	_, err := q.db.Exec(ctx, deleteFlightSeats, arg.FlightID, arg.SeatIds)
+func (q *Queries) DeleteFlightSeats(ctx context.Context, db DBTX, arg DeleteFlightSeatsParams) error {
+	_, err := db.Exec(ctx, deleteFlightSeats, arg.FlightID, arg.SeatIds)
 	return err
 }
 
@@ -126,8 +126,8 @@ type DeleteReservationSeatsParams struct {
 	SeatIds       []int32 `json:"seat_ids"`
 }
 
-func (q *Queries) DeleteReservationSeats(ctx context.Context, arg DeleteReservationSeatsParams) error {
-	_, err := q.db.Exec(ctx, deleteReservationSeats, arg.ReservationID, arg.SeatIds)
+func (q *Queries) DeleteReservationSeats(ctx context.Context, db DBTX, arg DeleteReservationSeatsParams) error {
+	_, err := db.Exec(ctx, deleteReservationSeats, arg.ReservationID, arg.SeatIds)
 	return err
 }
 
@@ -144,8 +144,8 @@ type GetReservationSeatsRow struct {
 	Col      int32     `json:"col"`
 }
 
-func (q *Queries) GetReservationSeats(ctx context.Context, reservationID int32) ([]GetReservationSeatsRow, error) {
-	rows, err := q.db.Query(ctx, getReservationSeats, reservationID)
+func (q *Queries) GetReservationSeats(ctx context.Context, db DBTX, reservationID int32) ([]GetReservationSeatsRow, error) {
+	rows, err := db.Query(ctx, getReservationSeats, reservationID)
 	if err != nil {
 		return nil, err
 	}
@@ -175,8 +175,8 @@ type GetReservedSeatsForFlightRow struct {
 	Col int32 `json:"col"`
 }
 
-func (q *Queries) GetReservedSeatsForFlight(ctx context.Context, flightID pgtype.Int4) ([]GetReservedSeatsForFlightRow, error) {
-	rows, err := q.db.Query(ctx, getReservedSeatsForFlight, flightID)
+func (q *Queries) GetReservedSeatsForFlight(ctx context.Context, db DBTX, flightID pgtype.Int4) ([]GetReservedSeatsForFlightRow, error) {
+	rows, err := db.Query(ctx, getReservedSeatsForFlight, flightID)
 	if err != nil {
 		return nil, err
 	}
@@ -208,8 +208,8 @@ type GetSeatIDsParams struct {
 	AirplaneID int32   `json:"airplane_id"`
 }
 
-func (q *Queries) GetSeatIDs(ctx context.Context, arg GetSeatIDsParams) ([]Seat, error) {
-	rows, err := q.db.Query(ctx, getSeatIDs, arg.Rows, arg.Cols, arg.AirplaneID)
+func (q *Queries) GetSeatIDs(ctx context.Context, db DBTX, arg GetSeatIDsParams) ([]Seat, error) {
+	rows, err := db.Query(ctx, getSeatIDs, arg.Rows, arg.Cols, arg.AirplaneID)
 	if err != nil {
 		return nil, err
 	}

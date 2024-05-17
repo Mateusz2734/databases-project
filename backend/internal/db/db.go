@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -12,7 +11,7 @@ const defaultTimeout = 3 * time.Second
 
 type DB struct {
 	*Queries
-	*pgx.Conn
+	*pgxpool.Pool
 }
 
 func NewDB(dsn string) (*DB, error) {
@@ -24,15 +23,7 @@ func NewDB(dsn string) (*DB, error) {
 		return nil, err
 	}
 
-	defer pool.Close()
+	db := New()
 
-	conn, err := pgx.Connect(ctx, dsn)
-
-	if err != nil {
-		return nil, err
-	}
-
-	db := New(conn)
-
-	return &DB{db, conn}, nil
+	return &DB{db, pool}, nil
 }
