@@ -4,6 +4,8 @@ import FlightDetailsPage from './FlightDetailsPage';
 import './css/App.css';
 import ReservationConfirm from './ReservationConfirm';
 import ReportsPage from './ReportsPage';
+import CancelReservation from './CancelReservation';
+import UpdateReservation from './UpdateReservation';
 
 const App: React.FC = () => {
     return (
@@ -14,6 +16,8 @@ const App: React.FC = () => {
                     <Route path="/flight/:id" element={<FlightDetailsPage />} />
                     <Route path="/Reservation" element={<ReservationConfirm />} />
                     <Route path="/reports" element={<ReportsPage />} />
+                    <Route path="/cancel" element={<CancelReservation />} />
+                    <Route path="/update" element={<UpdateReservation />} />
                 </Routes>
             </div>
         </Router>

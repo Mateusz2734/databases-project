@@ -1,51 +1,93 @@
-import React, {useRef, useEffect, useContext} from 'react';
-import SeatchartJS, { Options } from "seatchart";
+import React, { useRef, useEffect, useState } from 'react';
+import SeatchartJS, { Options } from 'seatchart';
+import Seatchart from './Seatchart';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
-import Seatchart from "./Seatchart";
 import './css/FlightDetailsPage.css';
-
-const options: Options = {
-    map: {
-        rows: 10,
-        columns: 10,
-        seatTypes: {
-            default: {
-                label: 'Economy',
-                cssClass: 'economy',
-                price: 15,
-            },
-            first: {
-                label: 'First Class',
-                cssClass: 'first-class',
-                price: 25,
-                seatRows: [0, 1, 2],
-            },
-            reduced: {
-                label: 'Reduced',
-                cssClass: 'reduced',
-                price: 10,
-                seatRows: [7, 8, 9],
-            },
-        },
-        disabledSeats: [
-            { row: 0, col: 0 },
-            { row: 0, col: 9 },
-        ],
-        reservedSeats: [
-            { row: 0, col: 3 },
-            { row: 0, col: 4 },
-        ],
-        rowSpacers: [3, 7],
-        columnSpacers: [5],
-    },
-};
 
 const FlightDetailsPage: React.FC = () => {
     const navigate = useNavigate();
     const seatchartRef = useRef<SeatchartJS>();
-    const { id } = useParams(); // accessing flight id from the URL
+    const [flightData, setFlightData] = useState<any>(null);
+    const { id } = useParams();
 
+    interface SeatType {
+        label: string;
+        cssClass: string;
+        price: number;
+        seatRows?: number[];
+    }
+
+    useEffect(() => {
+        const fetchFlightData = async () => {
+            try {
+                const response = await fetch(`http://localhost:4444/flights/${id}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log(data);
+                    setFlightData(data);
+                } else {
+                    throw new Error('Failed to fetch flight data');
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        fetchFlightData();
+    }, [id]);
+
+    const defaultOptions: Options = {
+        map: {
+            rows: 0,
+            columns: 0,
+            seatTypes: {
+                default: {
+                    label: 'Default',
+                    cssClass: 'default',
+                    price: 0,
+                },
+            },
+            reservedSeats: [],
+            rowSpacers: [],
+            columnSpacers: [],
+        },
+    };
+
+
+    const options: Options = flightData
+        ? {
+            map: {
+                rows: flightData.plane.diagram_metadata.rows,
+                columns: flightData.plane.diagram_metadata.columns,
+                seatTypes: Object.entries(flightData.plane.diagram_metadata.seatTypes).reduce((acc, [key, value]) => {
+                    const seatType = value as SeatType;
+                    let multiplier = 1;
+                    if(seatType.label === 'Business' ) {
+                        multiplier = 2;
+                    }
+                    else if(seatType.label === 'First Class'){
+                        multiplier = 3.5;
+                    }
+                    else if(seatType.label === 'Economy Plus'){
+                        multiplier = 1.2;
+                    }
+
+                    acc[key] = {
+                        label: seatType.label,
+                        cssClass: seatType.cssClass,
+                        price: parseFloat((flightData.flight.price * multiplier).toFixed(2)),
+                        seatRows: seatType.seatRows,
+                    };
+
+                    return acc;
+                }, {} as any),
+                reservedSeats: flightData.reserved,
+                rowSpacers: flightData.plane.diagram_metadata.rowSpacers,
+                columnSpacers: flightData.plane.diagram_metadata.columnSpacers,
+            }
+        }
+        : defaultOptions;
 
     const handleBackClick = () => {
         navigate(-1);
@@ -54,15 +96,14 @@ const FlightDetailsPage: React.FC = () => {
     useEffect(() => {
         const handleClick = () => {
             const reservationCost = seatchartRef.current?.getCartTotal();
-            const reservationSeats= seatchartRef.current?.getCart();
+            const reservationSeats = seatchartRef.current?.getCart();
 
             if (reservationCost && reservationCost > 0) {
-                navigate(`/Reservation`, { state: { reservationCost, id, reservationSeats } }); /// TU PRZEKIEROWANIE DO STRONY REZERWACJI
+                navigate(`/Reservation`, { state: { reservationCost, id, reservationSeats } });
             } else {
-                alert("Please select at least one seat before proceeding to reservation.");
+                alert('Please select at least one seat before proceeding to reservation.');
             }
         };
-
 
         if (seatchartRef.current) {
             const button = seatchartRef.current.element.querySelector('.sc-cart-btn.sc-cart-btn-submit');
@@ -79,12 +120,14 @@ const FlightDetailsPage: React.FC = () => {
                 }
             }
         };
-    }, [navigate]);
+    }, [navigate, seatchartRef.current]);
 
     return (
         <div className="flight-details-page-container">
-            <Seatchart ref={seatchartRef} options={options}/>
-            <button id={'backButton'} onClick={handleBackClick}>Back</button>
+            {flightData && <Seatchart ref={seatchartRef} options={options} />}
+            <button id={'backButton'} onClick={handleBackClick}>
+                Back
+            </button>
         </div>
     );
 };
