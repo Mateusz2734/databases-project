@@ -35,8 +35,8 @@ type GetPeriodicEarningsBetweenDatesRow struct {
 	Earnings    pgtype.Numeric `json:"earnings"`
 }
 
-func (q *Queries) GetPeriodicEarningsBetweenDates(ctx context.Context, arg GetPeriodicEarningsBetweenDatesParams) ([]GetPeriodicEarningsBetweenDatesRow, error) {
-	rows, err := q.db.Query(ctx, getPeriodicEarningsBetweenDates, arg.Type, arg.StartDate, arg.EndDate)
+func (q *Queries) GetPeriodicEarningsBetweenDates(ctx context.Context, db DBTX, arg GetPeriodicEarningsBetweenDatesParams) ([]GetPeriodicEarningsBetweenDatesRow, error) {
+	rows, err := db.Query(ctx, getPeriodicEarningsBetweenDates, arg.Type, arg.StartDate, arg.EndDate)
 	if err != nil {
 		return nil, err
 	}
@@ -75,8 +75,8 @@ type GetPopularDestinationsRow struct {
 	SeatCount      int64  `json:"seat_count"`
 }
 
-func (q *Queries) GetPopularDestinations(ctx context.Context, arg GetPopularDestinationsParams) ([]GetPopularDestinationsRow, error) {
-	rows, err := q.db.Query(ctx, getPopularDestinations, arg.StartDate, arg.EndDate, arg.CustomLimit)
+func (q *Queries) GetPopularDestinations(ctx context.Context, db DBTX, arg GetPopularDestinationsParams) ([]GetPopularDestinationsRow, error) {
+	rows, err := db.Query(ctx, getPopularDestinations, arg.StartDate, arg.EndDate, arg.CustomLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -116,8 +116,8 @@ type GetPopularFlightsRow struct {
 	SeatCount        int64  `json:"seat_count"`
 }
 
-func (q *Queries) GetPopularFlights(ctx context.Context, arg GetPopularFlightsParams) ([]GetPopularFlightsRow, error) {
-	rows, err := q.db.Query(ctx, getPopularFlights, arg.StartDate, arg.EndDate, arg.CustomLimit)
+func (q *Queries) GetPopularFlights(ctx context.Context, db DBTX, arg GetPopularFlightsParams) ([]GetPopularFlightsRow, error) {
+	rows, err := db.Query(ctx, getPopularFlights, arg.StartDate, arg.EndDate, arg.CustomLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -147,8 +147,8 @@ type GetTicketsSoldBetweenDatesParams struct {
 	EndDate   pgtype.Date `json:"end_date"`
 }
 
-func (q *Queries) GetTicketsSoldBetweenDates(ctx context.Context, arg GetTicketsSoldBetweenDatesParams) (int64, error) {
-	row := q.db.QueryRow(ctx, getTicketsSoldBetweenDates, arg.StartDate, arg.EndDate)
+func (q *Queries) GetTicketsSoldBetweenDates(ctx context.Context, db DBTX, arg GetTicketsSoldBetweenDatesParams) (int64, error) {
+	row := db.QueryRow(ctx, getTicketsSoldBetweenDates, arg.StartDate, arg.EndDate)
 	var seat_count int64
 	err := row.Scan(&seat_count)
 	return seat_count, err
@@ -175,8 +175,8 @@ type GetTotalEarningsBetweenDatesRow struct {
 	Value    pgtype.Numeric `json:"value"`
 }
 
-func (q *Queries) GetTotalEarningsBetweenDates(ctx context.Context, arg GetTotalEarningsBetweenDatesParams) ([]GetTotalEarningsBetweenDatesRow, error) {
-	rows, err := q.db.Query(ctx, getTotalEarningsBetweenDates, arg.StartDate, arg.EndDate)
+func (q *Queries) GetTotalEarningsBetweenDates(ctx context.Context, db DBTX, arg GetTotalEarningsBetweenDatesParams) ([]GetTotalEarningsBetweenDatesRow, error) {
+	rows, err := db.Query(ctx, getTotalEarningsBetweenDates, arg.StartDate, arg.EndDate)
 	if err != nil {
 		return nil, err
 	}

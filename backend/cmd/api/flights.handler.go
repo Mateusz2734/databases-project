@@ -26,7 +26,7 @@ func (app *application) getFlightData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	flight, err = app.db.GetFlightById(r.Context(), int32(flightIdInt))
+	flight, err = app.db.GetFlightById(r.Context(), app.db.Pool, int32(flightIdInt))
 	if err != nil && err != pgx.ErrNoRows {
 		app.serverError(w, r, err)
 		return
@@ -35,13 +35,13 @@ func (app *application) getFlightData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	plane, err = app.db.GetAirplaneById(r.Context(), flight.AirplaneID.Int32)
+	plane, err = app.db.GetAirplaneById(r.Context(), app.db.Pool, flight.AirplaneID.Int32)
 	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
-	reservedSeats, err := app.db.GetReservedSeatsForFlight(r.Context(), pgtype.Int4{Int32: flight.FlightID, Valid: true})
+	reservedSeats, err := app.db.GetReservedSeatsForFlight(r.Context(), app.db.Pool, pgtype.Int4{Int32: flight.FlightID, Valid: true})
 	if err != nil && err != pgx.ErrNoRows {
 		app.serverError(w, r, err)
 		return
@@ -78,7 +78,7 @@ func (app *application) createFlight(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	existingAirports, err := app.db.CheckIfAirportsExist(r.Context(), []string{input.DepartureAirport, input.ArrivalAirport})
+	existingAirports, err := app.db.CheckIfAirportsExist(r.Context(), app.db.Pool, []string{input.DepartureAirport, input.ArrivalAirport})
 	if err != nil {
 		app.serverError(w, r, err)
 		return
@@ -107,7 +107,7 @@ func (app *application) createFlight(w http.ResponseWriter, r *http.Request) {
 		Price:             price,
 	}
 
-	if err = app.db.AddFlight(r.Context(), params); err != nil {
+	if err = app.db.AddFlight(r.Context(), app.db.Pool, params); err != nil {
 		app.serverError(w, r, err)
 		return
 	}
@@ -137,7 +137,7 @@ func (app *application) getFilteredFlights(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	filtered, err := app.db.GetFlightsWithFilters(r.Context(), db.GetFlightsWithFiltersParams{
+	filtered, err := app.db.GetFlightsWithFilters(r.Context(), app.db.Pool, db.GetFlightsWithFiltersParams{
 		FromAirport:         departureAirport,
 		FilterByFromAirport: departureAirport != "",
 
@@ -203,9 +203,7 @@ func (app *application) editFlight(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback(r.Context())
 
-	qtx := app.db.WithTx(tx)
-
-	flight, err := qtx.GetFlightById(r.Context(), int32(flightIDint))
+	flight, err := app.db.GetFlightById(r.Context(), tx, int32(flightIDint))
 	if err != nil && err != pgx.ErrNoRows {
 		app.serverError(w, r, err)
 		return
@@ -230,7 +228,7 @@ func (app *application) editFlight(w http.ResponseWriter, r *http.Request) {
 		Price:             price,
 		FlightID:          int32(flightIDint),
 	}
-	if err := app.db.UpdateFlight(r.Context(), params); err != nil {
+	if err := app.db.UpdateFlight(r.Context(), tx, params); err != nil {
 		app.serverError(w, r, err)
 		return
 	}

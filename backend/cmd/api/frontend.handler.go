@@ -8,7 +8,7 @@ import (
 )
 
 func (app *application) getAvailableCities(w http.ResponseWriter, r *http.Request) {
-	entries, err := app.db.GetAvailableCitiesWithCountries(r.Context())
+	entries, err := app.db.GetAvailableCitiesWithCountries(r.Context(), app.db.Pool)
 	if err != nil {
 		app.serverError(w, r, err)
 	}
