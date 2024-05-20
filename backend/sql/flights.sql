@@ -1,5 +1,5 @@
 -- name: GetFlightsWithFilters :many
-SELECT f.*
+SELECT f.*, a.city AS departure_city, a2.city AS arrival_city
 FROM flights AS f
 JOIN airports AS a ON a.airport_code = f.departure_airport
     AND (a.airport_code = @from_airport OR NOT @filter_by_from_airport :: boolean)

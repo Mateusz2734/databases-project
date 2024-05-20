@@ -69,7 +69,7 @@ func (q *Queries) GetFlightById(ctx context.Context, db DBTX, flightID int32) (F
 }
 
 const getFlightsWithFilters = `-- name: GetFlightsWithFilters :many
-SELECT f.flight_id, f.departure_airport, f.arrival_airport, f.departure_datetime, f.arrival_datetime, f.airplane_id, f.price
+SELECT f.flight_id, f.departure_airport, f.arrival_airport, f.departure_datetime, f.arrival_datetime, f.airplane_id, f.price, a.city AS departure_city, a2.city AS arrival_city
 FROM flights AS f
 JOIN airports AS a ON a.airport_code = f.departure_airport
     AND (a.airport_code = $1 OR NOT $2 :: boolean)
@@ -102,7 +102,19 @@ type GetFlightsWithFiltersParams struct {
 	FilterByPrice             bool             `json:"filter_by_price"`
 }
 
-func (q *Queries) GetFlightsWithFilters(ctx context.Context, db DBTX, arg GetFlightsWithFiltersParams) ([]Flight, error) {
+type GetFlightsWithFiltersRow struct {
+	FlightID          int32            `json:"flight_id"`
+	DepartureAirport  string           `json:"departure_airport"`
+	ArrivalAirport    string           `json:"arrival_airport"`
+	DepartureDatetime pgtype.Timestamp `json:"departure_datetime"`
+	ArrivalDatetime   pgtype.Timestamp `json:"arrival_datetime"`
+	AirplaneID        pgtype.Int4      `json:"airplane_id"`
+	Price             pgtype.Numeric   `json:"price"`
+	DepartureCity     string           `json:"departure_city"`
+	ArrivalCity       string           `json:"arrival_city"`
+}
+
+func (q *Queries) GetFlightsWithFilters(ctx context.Context, db DBTX, arg GetFlightsWithFiltersParams) ([]GetFlightsWithFiltersRow, error) {
 	rows, err := db.Query(ctx, getFlightsWithFilters,
 		arg.FromAirport,
 		arg.FilterByFromAirport,
@@ -124,9 +136,9 @@ func (q *Queries) GetFlightsWithFilters(ctx context.Context, db DBTX, arg GetFli
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Flight
+	var items []GetFlightsWithFiltersRow
 	for rows.Next() {
-		var i Flight
+		var i GetFlightsWithFiltersRow
 		if err := rows.Scan(
 			&i.FlightID,
 			&i.DepartureAirport,
@@ -135,6 +147,8 @@ func (q *Queries) GetFlightsWithFilters(ctx context.Context, db DBTX, arg GetFli
 			&i.ArrivalDatetime,
 			&i.AirplaneID,
 			&i.Price,
+			&i.DepartureCity,
+			&i.ArrivalCity,
 		); err != nil {
 			return nil, err
 		}

@@ -172,10 +172,7 @@ func (app *application) getFilteredFlights(w http.ResponseWriter, r *http.Reques
 	}
 
 	if err == pgx.ErrNoRows || len(filtered) == 0 {
-		response.JSON(w, http.StatusNotFound, map[string]interface{}{
-			"message": "No flights found",
-		})
-		return
+		filtered = []db.GetFlightsWithFiltersRow{}
 	}
 
 	if err = response.JSON(w, http.StatusOK, filtered); err != nil {
