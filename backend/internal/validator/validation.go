@@ -40,12 +40,24 @@ func ValidateEditFlightParams(flight db.Flight, departureDatetime, arrivalDateti
 }
 
 func ValidateAirports(departure, arrival string) error {
-	if len(departure) != 3 || len(arrival) != 3 {
-		return fmt.Errorf("airport code must be 3 characters long")
-	}
+	if departure != "" && arrival != "" {
+		if len(departure) != 3 || len(arrival) != 3 {
+			return fmt.Errorf("airport code must be 3 characters long")
+		}
 
-	if departure == arrival {
-		return fmt.Errorf("departure and arrival airports are the same")
+		if departure == arrival {
+			return fmt.Errorf("departure and arrival airports are the same")
+		}
+
+		return nil
+	} else if departure != "" {
+		if len(departure) != 3 {
+			return fmt.Errorf("airport code must be 3 characters long")
+		}
+	} else if arrival != "" {
+		if len(arrival) != 3 {
+			return fmt.Errorf("airport code must be 3 characters long")
+		}
 	}
 
 	return nil

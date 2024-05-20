@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/Mateusz2734/databases-project/backend/internal/db"
 	"github.com/Mateusz2734/databases-project/backend/internal/request"
@@ -119,16 +120,20 @@ func (app *application) createFlight(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) getFilteredFlights(w http.ResponseWriter, r *http.Request) {
-	departureAirport := r.URL.Query().Get("origin")
-	arrivalAirport := r.URL.Query().Get("destination")
+	departureAirport := strings.ToUpper(r.URL.Query().Get("origin"))
+	arrivalAirport := strings.ToUpper(r.URL.Query().Get("destination"))
 	departureDatetime := r.URL.Query().Get("departure_time")
 	arrivalDatetime := r.URL.Query().Get("arrival_time")
 	minPrice := r.URL.Query().Get("min_price")
 	maxPrice := r.URL.Query().Get("max_price")
+	departureCity := r.URL.Query().Get("origin_city")
+	arrivalCity := r.URL.Query().Get("destination_city")
 
-	if err := validator.ValidateAirports(departureAirport, arrivalAirport); err != nil {
-		app.badRequest(w, r, err)
-		return
+	if departureAirport != "" || arrivalAirport != "" {
+		if err := validator.ValidateAirports(departureAirport, arrivalAirport); err != nil {
+			app.badRequest(w, r, err)
+			return
+		}
 	}
 
 	departure, arrival, min, max, err := validator.ValidateGetFilteredFlightsParams(departureDatetime, arrivalDatetime, minPrice, maxPrice)
@@ -149,6 +154,12 @@ func (app *application) getFilteredFlights(w http.ResponseWriter, r *http.Reques
 
 		ArrivalDatetime:         arrival,
 		FilterByArrivalDatetime: arrivalDatetime != "",
+
+		FromCity:         departureCity,
+		FilterByFromCity: departureCity != "",
+
+		ToCity:         arrivalCity,
+		FilterByToCity: arrivalCity != "",
 
 		MinPrice:      min,
 		MaxPrice:      max,

@@ -73,19 +73,26 @@ SELECT f.flight_id, f.departure_airport, f.arrival_airport, f.departure_datetime
 FROM flights AS f
 JOIN airports AS a ON a.airport_code = f.departure_airport
     AND (a.airport_code = $1 OR NOT $2 :: boolean)
+    AND (a.city = $3 OR NOT $4 :: boolean)
 JOIN airports AS a2 ON a2.airport_code = f.arrival_airport
-    AND (a2.airport_code = $3 OR NOT $4 :: boolean)
+    AND (a2.airport_code = $5 OR NOT $6 :: boolean)
+    AND (a2.city = $7 OR NOT $8 :: boolean)
 WHERE true 
-    AND (date_part('day', f.departure_datetime) = date_part('day', $5::timestamp) OR NOT $6::boolean)
-    AND (date_part('day', f.arrival_datetime) = date_part('day', $7::timestamp) OR NOT $8::boolean)
-    AND (f.price BETWEEN $9 AND $10 OR NOT $11::boolean)
+    AND (date_part('day', f.departure_datetime) = date_part('day', $9::timestamp) OR NOT $10::boolean)
+    AND (date_part('day', f.arrival_datetime) = date_part('day', $11::timestamp) OR NOT $12::boolean)
+    AND (f.price BETWEEN $13 AND $14 OR NOT $15::boolean)
+    AND (f.departure_datetime > NOW())
 `
 
 type GetFlightsWithFiltersParams struct {
 	FromAirport               string           `json:"from_airport"`
 	FilterByFromAirport       bool             `json:"filter_by_from_airport"`
+	FromCity                  string           `json:"from_city"`
+	FilterByFromCity          bool             `json:"filter_by_from_city"`
 	ToAirport                 string           `json:"to_airport"`
 	FilterByToAirport         bool             `json:"filter_by_to_airport"`
+	ToCity                    string           `json:"to_city"`
+	FilterByToCity            bool             `json:"filter_by_to_city"`
 	DepartureDatetime         pgtype.Timestamp `json:"departure_datetime"`
 	FilterByDepartureDatetime bool             `json:"filter_by_departure_datetime"`
 	ArrivalDatetime           pgtype.Timestamp `json:"arrival_datetime"`
@@ -99,8 +106,12 @@ func (q *Queries) GetFlightsWithFilters(ctx context.Context, db DBTX, arg GetFli
 	rows, err := db.Query(ctx, getFlightsWithFilters,
 		arg.FromAirport,
 		arg.FilterByFromAirport,
+		arg.FromCity,
+		arg.FilterByFromCity,
 		arg.ToAirport,
 		arg.FilterByToAirport,
+		arg.ToCity,
+		arg.FilterByToCity,
 		arg.DepartureDatetime,
 		arg.FilterByDepartureDatetime,
 		arg.ArrivalDatetime,
