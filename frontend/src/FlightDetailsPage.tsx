@@ -105,7 +105,7 @@ const FlightDetailsPage: React.FC = () => {
             const reservationSeats = seatchartRef.current?.getCart();
 
             if (reservationCost && reservationCost > 0) {
-                navigate(`/Reservation`, { state: { reservationCost, id, reservationSeats } });
+                navigate(`/confirm`, { state: { reservationCost, id, reservationSeats } });
             } else {
                 alert('Please select at least one seat before proceeding to reservation.');
             }

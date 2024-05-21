@@ -5,7 +5,7 @@ import { FlightType } from '../types';
 export function FlightCard(flight: FlightType) {
     return (
         <Link key={flight.flight_id}
-            to={`/flight/${flight.flight_id}`}
+            to={`/flights/${flight.flight_id}`}
             className="flight">
             <div className="origin">{flight.departure_city} ({flight.departure_airport})</div>
             <div className="destination">{flight.arrival_city} ({flight.arrival_airport})</div>
