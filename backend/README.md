@@ -4,6 +4,8 @@ make migrations/up
 make run/live
 ```
 
+## Database schema
+![](docs/schema.png)
 
 ## API structure
 
