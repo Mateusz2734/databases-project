@@ -1,8 +1,10 @@
 import React, { useRef, useEffect, useState } from 'react';
 import SeatchartJS, { Options } from 'seatchart';
-import Seatchart from './Seatchart';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+
+import { columnLabeler, rowLabeler } from './helpers/ui';
+import Seatchart from './Seatchart';
 import './css/FlightDetailsPage.css';
 
 const FlightDetailsPage: React.FC = () => {
@@ -57,19 +59,20 @@ const FlightDetailsPage: React.FC = () => {
 
     const options: Options = flightData
         ? {
+            cart: { currency: "PLN" },
             map: {
                 rows: flightData.plane.diagram_metadata.rows,
                 columns: flightData.plane.diagram_metadata.columns,
                 seatTypes: Object.entries(flightData.plane.diagram_metadata.seatTypes).reduce((acc, [key, value]) => {
                     const seatType = value as SeatType;
                     let multiplier = 1;
-                    if(seatType.label === 'Business' ) {
+                    if (seatType.label === 'Business') {
                         multiplier = 2;
                     }
-                    else if(seatType.label === 'First Class'){
+                    else if (seatType.label === 'First Class') {
                         multiplier = 3.5;
                     }
-                    else if(seatType.label === 'Economy Plus'){
+                    else if (seatType.label === 'Economy Plus') {
                         multiplier = 1.2;
                     }
 
@@ -85,6 +88,9 @@ const FlightDetailsPage: React.FC = () => {
                 reservedSeats: flightData.reserved,
                 rowSpacers: flightData.plane.diagram_metadata.rowSpacers,
                 columnSpacers: flightData.plane.diagram_metadata.columnSpacers,
+                disabledSeats: flightData.plane.diagram_metadata.disabledSeats,
+                indexerColumns: { label: columnLabeler },
+                indexerRows: { label: rowLabeler },
             }
         }
         : defaultOptions;
