@@ -331,7 +331,7 @@ func (app *application) getReservation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	reservation, err := app.db.GetReservationByID(r.Context(), app.db.Pool, int32(reservationIDint))
-	if err != nil {
+	if err != nil && err != pgx.ErrNoRows {
 		app.serverError(w, r, err)
 		return
 	}

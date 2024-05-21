@@ -1,14 +1,17 @@
 -- name: GetFlightsWithFilters :many
-SELECT f.*
+SELECT f.*, a.city AS departure_city, a2.city AS arrival_city
 FROM flights AS f
 JOIN airports AS a ON a.airport_code = f.departure_airport
     AND (a.airport_code = @from_airport OR NOT @filter_by_from_airport :: boolean)
+    AND (a.city = @from_city OR NOT @filter_by_from_city :: boolean)
 JOIN airports AS a2 ON a2.airport_code = f.arrival_airport
     AND (a2.airport_code = @to_airport OR NOT @filter_by_to_airport :: boolean)
+    AND (a2.city = @to_city OR NOT @filter_by_to_city :: boolean)
 WHERE true 
     AND (date_part('day', f.departure_datetime) = date_part('day', @departure_datetime::timestamp) OR NOT @filter_by_departure_datetime::boolean)
     AND (date_part('day', f.arrival_datetime) = date_part('day', @arrival_datetime::timestamp) OR NOT @filter_by_arrival_datetime::boolean)
-    AND (f.price BETWEEN @min_price AND @max_price OR NOT @filter_by_price::boolean);
+    AND (f.price BETWEEN @min_price AND @max_price OR NOT @filter_by_price::boolean)
+    AND (f.departure_datetime > NOW());
 
 -- name: AddFlight :exec
 INSERT INTO flights (departure_airport, arrival_airport, departure_datetime, arrival_datetime, airplane_id, price)

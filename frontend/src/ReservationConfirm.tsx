@@ -70,7 +70,7 @@ const ReservationConfirm: React.FC = () => {
         });
         const data = await response.json();
         if (response.ok) {
-            if (data.message==='Reservation created') {
+            if (data.message === 'Reservation created') {
                 window.alert('Reservation confirmed! Reservation ID: ' + data.reservation.reservation_id);
                 navigate('/');
             } else {
@@ -91,23 +91,23 @@ const ReservationConfirm: React.FC = () => {
             <p>Reserved Seats:</p>
             <table className="reservation-table">
                 <thead>
-                <tr>
-                    <th>Seat Label</th>
-                    <th>Seat Type</th>
-                    <th>Row</th>
-                    <th>Column</th>
-                </tr>
+                    <tr>
+                        <th>Seat Label</th>
+                        <th>Seat Type</th>
+                        <th>Row</th>
+                        <th>Column</th>
+                    </tr>
                 </thead>
                 <tbody>
-                {reservationSeats &&
-                    reservationSeats.map((seat: any, index: number) => (
-                        <tr key={index}>
-                            <td>{seat.label}</td>
-                            <td>{seat.type}</td>
-                            <td>{seat.index.row}</td>
-                            <td>{seat.index.col}</td>
-                        </tr>
-                    ))}
+                    {reservationSeats &&
+                        reservationSeats.map((seat: any, index: number) => (
+                            <tr key={index}>
+                                <td>{seat.label}</td>
+                                <td>{seat.type}</td>
+                                <td>{seat.index.row}</td>
+                                <td>{seat.index.col}</td>
+                            </tr>
+                        ))}
                 </tbody>
             </table>
 
@@ -136,7 +136,7 @@ const ReservationConfirm: React.FC = () => {
                 </label>
                 <button onClick={handleConfirmClick}>Confirm Reservation</button>
             </form>
-            <p>Reservations Cost: {reservationCost.toFixed(2)} €</p>
+            <p>Reservations Cost: {reservationCost.toFixed(2)} PLN</p>
         </div>
     );
 };

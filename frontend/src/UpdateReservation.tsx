@@ -1,175 +1,71 @@
-import React, {useState, useEffect, useRef} from 'react';
-import {useLocation, useNavigate, useParams} from 'react-router-dom';
-import Seatchart from './Seatchart';
-import SeatchartJS, {Events, Options, SeatType, SubmitEvent} from "seatchart";
-import './css/HomePage.css';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { DataGrid, GridColDef, GridRowId } from '@mui/x-data-grid';
 
-interface Flight {
-    flight_id: number;
-    departure_airport: string;
-    arrival_airport: string;
-    departure_datetime: string;
-    arrival_datetime: string;
-    airplane_id: number;
-    price: number;
-}
-interface Seat {
-    seat_type: string;
+import { Seat, Reservation } from './types';
+import './css/FlightFinder.css';
+
+type SeatPlacement = {
     row: number;
     col: number;
-}
+};
 
-interface Reservation {
-    reservation_id: string;
-    flight_id: number;
-    firstname: string;
-    lastname: string;
-    email: string;
-    reservation_datetime: string;
-    status: {
-        reservation_status: string;
-        valid: boolean;
-    };
-    seats: Seat[];
-}
-
-const UpdateReservation: React.FC = () => {
-    const seatchartRef = useRef<SeatchartJS>();
-    const [flightId, setFlightId] = useState<string>('');
+export default function UpdateReservation() {
+    const { id } = useParams();
     const navigate = useNavigate();
-    const location = useLocation();
-    const { searchedReservationId } = location.state;
-    // const { reservationId } = useParams<{ reservationId: string }>();
-    const [flight, setFlight] = useState<Flight | null>(null);
+
     const [reservation, setReservation] = useState<Reservation | null>(null);
-    const [seats, setSeats] = useState<Seat[]>([]);
-    const [flightData, setFlightData] = useState<any>(null);
+    const [seats, setSeats] = useState<(Seat & { id: number; })[]>([]);
+    const [selectionModel, setSelectionModel] = useState<GridRowId[]>([]);
 
     useEffect(() => {
-        const handleSearchClick = async () => {
-            console.log('Searching reservation:', searchedReservationId);
+        const fetchData = async () => {
             try {
-                const response = await fetch(`http://localhost:4444/reservations/${searchedReservationId}`);
-                if (!response.ok) {
+                const response = await fetch(`http://localhost:4444/reservations/${id}`);
+                if (!response.ok && response.status !== 404) {
                     throw new Error('Error searching reservation');
                 }
                 const data = await response.json();
-                setFlight(data.flight);
                 setReservation(data.reservation);
-                setSeats(data.seats);
-                setFlightId(data.flight.flight_id);
-                console.log('Fetching flight data:', flightId);
-
+                setSeats(data.seats.map((seat: Seat, index: number) => ({ ...seat, id: index })));
             } catch (error) {
                 console.error('Error searching reservation:', error);
                 window.alert('Error searching reservation. Please try again later.');
             }
         };
-        handleSearchClick();
-    }, [searchedReservationId]);
-
-    useEffect(() => {
-        if(!flightId) return;
-        const fetchFlightData = async () => {
-            try {
-                const response = await fetch(`http://localhost:4444/flights/${flightId}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    setFlightData(data);
-                } else {
-                    throw new Error('Failed to fetch flight data');
-                }
-            } catch (error) {
-                console.error(error);
-            }
-        };
-        fetchFlightData();
-    }, [flightId]);
-
-    useEffect(() => {
-        console.log("xd")
-        if (seatchartRef.current) {
-            console.log("xd2")
-            seatchartRef.current?.element.querySelector('.sc-cart-btn.sc-cart-btn-submit')?.addEventListener('click', handleUpdateClick);
-        }
-    },[seatchartRef.current]);
-
-
-    const defaultOptions: Options = {
-        map: {
-            rows: 0,
-            columns: 0,
-            seatTypes: {
-                default: {
-                    label: 'Default',
-                    cssClass: 'default',
-                    price: 0,
-                },
-            },
-            reservedSeats: [],
-            rowSpacers: [],
-            columnSpacers: [],
-        },
-    };
-
-    const options: Options = flightData
-        ? {
-            map: {
-                rows: flightData.plane.diagram_metadata.rows,
-                columns: flightData.plane.diagram_metadata.columns,
-                seatTypes: Object.entries(flightData.plane.diagram_metadata.seatTypes).reduce((acc, [key, value]) => {
-                    const seatType = value as SeatType;
-                    let multiplier = 1;
-                    if(seatType.label === 'Business' ) {
-                        multiplier = 2;
-                    }
-                    else if(seatType.label === 'First Class'){
-                        multiplier = 3.5;
-                    }
-                    else if(seatType.label === 'Economy Plus'){
-                        multiplier = 1.2;
-                    }
-
-                    acc[key] = {
-                        label: seatType.label,
-                        cssClass: seatType.cssClass,
-                        price: parseFloat((flightData.flight.price * multiplier).toFixed(2)),
-                        seatRows: seatType.seatRows,
-                    };
-
-                    return acc;
-                }, {} as any),
-                reservedSeats: flightData.reserved,
-                rowSpacers: flightData.plane.diagram_metadata.rowSpacers,
-                columnSpacers: flightData.plane.diagram_metadata.columnSpacers,
-            }
-        } : defaultOptions;
+        fetchData();
+    }, [id]);
 
     const handleUpdateClick = async () => {
-        const selectedSeats = seatchartRef.current?.getCart();
-        let formattedSeats: { row: number; column: number; }[];
-        if (selectedSeats) {
-            formattedSeats = selectedSeats.map(item => ({
-                row: item.index.row,
-                column: item.index.col
-            }));
-        } else {
-            formattedSeats = [];
-            console.log("No selected seats.");
+        const toDelete: SeatPlacement[] = [];
+        selectionModel.forEach((val) => {
+            const seat = seats[Number(val)];
+            toDelete.push({ row: seat.row, col: seat.col });
+        });
+
+        if (toDelete.length === 0) {
+            window.alert('Please select at least one seat to remove');
+            return;
         }
 
+        if (toDelete.length === seats.length) {
+            window.alert('Cannot remove all seats from a reservation. Please cancel the reservation instead.');
+            return;
+        }
         try {
-            const response = await fetch(`http://localhost:4444/reservations/${searchedReservationId}`, {
+            const response = await fetch(`http://localhost:4444/reservations/${id}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ formattedSeats })
+                body: JSON.stringify({ seats: toDelete })
             });
 
             if (response.ok) {
+                setSeats(seats.filter((_, index) => !selectionModel.includes(index)));
+                setSelectionModel([]);
                 window.alert('Reservation updated successfully!');
-                setSeats(seats);
+
             } else {
                 throw new Error('Error updating reservation');
             }
@@ -189,30 +85,25 @@ const UpdateReservation: React.FC = () => {
                 Back
             </button>
             <h1>Update Reservation</h1>
-            {reservation && (
-                <div>
-                    <h3>Reservated Seats:</h3>
-                    <table>
-                        <thead>
-                        <tr>
-                            <th>Seat Type</th>
-                            <th>Row</th>
-                            <th>Column</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {seats.map((seat, index) => (
-                            <tr key={index}>
-                                <td>{seat.seat_type}</td>
-                                <td>{seat.row + 1}</td>
-                                <td>{seat.col + 1}</td>
-                            </tr>
-                        ))}
-                        </tbody>
-                    </table>
+            <div>
+                <h3>Choose seats to remove:</h3>
+                <div style={{ width: '100%', marginBottom: 10 }}>
+                    {reservation ? (
+                        <DataGrid
+                            rows={seats}
+                            columns={columns}
+                            checkboxSelection
+                            disableColumnMenu
+                            disableColumnSorting
+                            rowSelectionModel={selectionModel}
+                            onRowSelectionModelChange={(newSelection) => {
+                                setSelectionModel(newSelection);
+                            }}
+                        />
+                    ) : <p>Reservation does not exist</p>}
                 </div>
-            )}
-            {flightData && <Seatchart ref={seatchartRef} options={options}/>}
+            </div>
+
             <button className={'updateButton'} onClick={handleUpdateClick}>
                 Update
             </button>
@@ -220,5 +111,13 @@ const UpdateReservation: React.FC = () => {
     );
 };
 
-export default UpdateReservation;
+function display(snake: string) {
+    const capitalized = snake.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1));
+    return capitalized.join(' ');
+}
 
+const columns: GridColDef[] = [
+    { field: 'seat_type', minWidth: 150, headerName: "Seat Class", type: 'string', valueGetter: (seat_type: string) => display(seat_type) },
+    { field: 'row', headerName: 'Row', type: 'number', valueGetter: (row: number) => row + 1 },
+    { field: 'col', headerName: 'Column', type: 'number', valueGetter: (col: number) => col + 1 }
+];
