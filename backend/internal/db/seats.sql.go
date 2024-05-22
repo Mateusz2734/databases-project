@@ -11,6 +11,12 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AddReservationSeatsParams struct {
+	FlightID      int32 `json:"flight_id"`
+	ReservationID int32 `json:"reservation_id"`
+	SeatID        int32 `json:"seat_id"`
+}
+
 const checkIfUnavailable = `-- name: CheckIfUnavailable :many
 SELECT seat_id FROM flight_seats 
 WHERE flight_id = $1::int
@@ -42,25 +48,25 @@ func (q *Queries) CheckIfUnavailable(ctx context.Context, db DBTX, arg CheckIfUn
 	return items, nil
 }
 
-const deleteAllFlightSeats = `-- name: DeleteAllFlightSeats :many
-DELETE FROM flight_seats 
-WHERE flight_id = $1::int
-RETURNING flight_seats.seat_id::int
+const deleteAllReservationSeats = `-- name: DeleteAllReservationSeats :many
+DELETE FROM flight_seats
+WHERE reservation_id = $1::int
+RETURNING seat_id::int
 `
 
-func (q *Queries) DeleteAllFlightSeats(ctx context.Context, db DBTX, flightID int32) ([]int32, error) {
-	rows, err := db.Query(ctx, deleteAllFlightSeats, flightID)
+func (q *Queries) DeleteAllReservationSeats(ctx context.Context, db DBTX, reservationID int32) ([]int32, error) {
+	rows, err := db.Query(ctx, deleteAllReservationSeats, reservationID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	var items []int32
 	for rows.Next() {
-		var flight_seats_seat_id int32
-		if err := rows.Scan(&flight_seats_seat_id); err != nil {
+		var seat_id int32
+		if err := rows.Scan(&seat_id); err != nil {
 			return nil, err
 		}
-		items = append(items, flight_seats_seat_id)
+		items = append(items, seat_id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -68,19 +74,19 @@ func (q *Queries) DeleteAllFlightSeats(ctx context.Context, db DBTX, flightID in
 	return items, nil
 }
 
-const deleteFlightSeats = `-- name: DeleteFlightSeats :exec
-DELETE FROM flight_seats 
-WHERE flight_id = $1::int
+const deleteReservationSeats = `-- name: DeleteReservationSeats :exec
+DELETE FROM flight_seats
+WHERE reservation_id = $1::int
 AND seat_id = ANY($2::int[])
 `
 
-type DeleteFlightSeatsParams struct {
-	FlightID int32   `json:"flight_id"`
-	SeatIds  []int32 `json:"seat_ids"`
+type DeleteReservationSeatsParams struct {
+	ReservationID int32   `json:"reservation_id"`
+	SeatIds       []int32 `json:"seat_ids"`
 }
 
-func (q *Queries) DeleteFlightSeats(ctx context.Context, db DBTX, arg DeleteFlightSeatsParams) error {
-	_, err := db.Exec(ctx, deleteFlightSeats, arg.FlightID, arg.SeatIds)
+func (q *Queries) DeleteReservationSeats(ctx context.Context, db DBTX, arg DeleteReservationSeatsParams) error {
+	_, err := db.Exec(ctx, deleteReservationSeats, arg.ReservationID, arg.SeatIds)
 	return err
 }
 
@@ -185,9 +191,4 @@ func (q *Queries) GetSeatIDs(ctx context.Context, db DBTX, arg GetSeatIDsParams)
 		return nil, err
 	}
 	return items, nil
-}
-
-type ReserveFlightSeatsParams struct {
-	FlightID int32 `json:"flight_id"`
-	SeatID   int32 `json:"seat_id"`
 }
