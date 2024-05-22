@@ -12,49 +12,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type ReservationStatus string
-
-const (
-	ReservationStatusPending   ReservationStatus = "pending"
-	ReservationStatusConfirmed ReservationStatus = "confirmed"
-	ReservationStatusCancelled ReservationStatus = "cancelled"
-)
-
-func (e *ReservationStatus) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = ReservationStatus(s)
-	case string:
-		*e = ReservationStatus(s)
-	default:
-		return fmt.Errorf("unsupported scan type for ReservationStatus: %T", src)
-	}
-	return nil
-}
-
-type NullReservationStatus struct {
-	ReservationStatus ReservationStatus `json:"reservation_status"`
-	Valid             bool              `json:"valid"` // Valid is true if ReservationStatus is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullReservationStatus) Scan(value interface{}) error {
-	if value == nil {
-		ns.ReservationStatus, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.ReservationStatus.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullReservationStatus) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.ReservationStatus), nil
-}
-
 type SeatClass string
 
 const (
@@ -123,10 +80,11 @@ type Flight struct {
 }
 
 type FlightSeat struct {
-	ID        int32            `json:"id"`
-	FlightID  pgtype.Int4      `json:"flight_id"`
-	SeatID    pgtype.Int4      `json:"seat_id"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
+	ID            int32            `json:"id"`
+	FlightID      pgtype.Int4      `json:"flight_id"`
+	SeatID        pgtype.Int4      `json:"seat_id"`
+	ReservationID pgtype.Int4      `json:"reservation_id"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
 }
 
 type Pricing struct {
@@ -136,19 +94,12 @@ type Pricing struct {
 }
 
 type Reservation struct {
-	ReservationID       int32                 `json:"reservation_id"`
-	FlightID            pgtype.Int4           `json:"flight_id"`
-	Firstname           string                `json:"firstname"`
-	Lastname            string                `json:"lastname"`
-	Email               string                `json:"email"`
-	ReservationDatetime pgtype.Timestamp      `json:"reservation_datetime"`
-	Status              NullReservationStatus `json:"status"`
-}
-
-type ReservationSeat struct {
-	ID            int32       `json:"id"`
-	ReservationID pgtype.Int4 `json:"reservation_id"`
-	SeatID        pgtype.Int4 `json:"seat_id"`
+	ReservationID       int32            `json:"reservation_id"`
+	FlightID            pgtype.Int4      `json:"flight_id"`
+	Firstname           string           `json:"firstname"`
+	Lastname            string           `json:"lastname"`
+	Email               string           `json:"email"`
+	ReservationDatetime pgtype.Timestamp `json:"reservation_datetime"`
 }
 
 type Seat struct {

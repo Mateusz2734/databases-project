@@ -1,9 +1,3 @@
-CREATE TYPE "reservation_status" AS ENUM (
-  'pending',
-  'confirmed',
-  'cancelled'
-);
-
 CREATE TYPE "seat_class" AS ENUM (
   'economy',
   'business',
@@ -40,15 +34,15 @@ CREATE TABLE "reservations" (
   "firstname" VARCHAR(50) NOT NULL,
   "lastname" VARCHAR(50) NOT NULL,
   "email" VARCHAR(100) NOT NULL,
-  "reservation_datetime" TIMESTAMP,
-  "status" reservation_status
+  "reservation_datetime" TIMESTAMP
 );
 
 CREATE TABLE "flight_seats" (
   "id" SERIAL PRIMARY KEY,
   "flight_id" INT,
   "seat_id" INT,
-  "created_at" TIMESTAMP DEFAULT NOW()
+  "reservation_id" INT,
+  "created_at" TIMESTAMP
 );
 
 CREATE TABLE "seats" (
@@ -59,21 +53,13 @@ CREATE TABLE "seats" (
   "col" INT NOT NULL
 );
 
-CREATE TABLE "reservation_seats" (
-  "id" SERIAL PRIMARY KEY,
-  "reservation_id" INT,
-  "seat_id" INT
-);
-
 CREATE TABLE "pricing" (
   "id" SERIAL PRIMARY KEY,
   "seat_class" seat_class NOT NULL,
   "value" DECIMAL(10,2) NOT NULL
 );
 
-ALTER TABLE "reservation_seats" ADD FOREIGN KEY ("reservation_id") REFERENCES "reservations" ("reservation_id");
-
-ALTER TABLE "reservation_seats" ADD FOREIGN KEY ("seat_id") REFERENCES "seats" ("seat_id");
+ALTER TABLE "flight_seats" ADD FOREIGN KEY ("reservation_id") REFERENCES "reservations" ("reservation_id");
 
 ALTER TABLE "flights" ADD FOREIGN KEY ("arrival_airport") REFERENCES "airports" ("airport_code");
 

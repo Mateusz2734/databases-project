@@ -14,26 +14,13 @@ WHERE row = ANY(sqlc.slice('rows'))
 AND col = ANY(sqlc.slice('cols'))
 AND airplane_id = @airplane_id;
 
--- name: AddReservationSeats :copyfrom
-INSERT INTO reservation_seats (reservation_id, seat_id) VALUES (@reservation_id::int, @seat_id::int);
-
 -- name: ReserveFlightSeats :copyfrom
 INSERT INTO flight_seats (flight_id, seat_id) VALUES (@flight_id::int, @seat_id::int);
-
--- name: DeleteReservationSeats :exec
-DELETE FROM reservation_seats 
-WHERE reservation_id = @reservation_id::int 
-AND seat_id = ANY(sqlc.slice('seat_ids')::int[]);
 
 -- name: DeleteFlightSeats :exec
 DELETE FROM flight_seats 
 WHERE flight_id = @flight_id::int
 AND seat_id = ANY(sqlc.slice('seat_ids')::int[]);
-
--- name: DeleteAllReservationSeats :many
-DELETE FROM reservation_seats 
-WHERE reservation_id = @reservation_id::int
-RETURNING reservation_seats.seat_id::int;
 
 -- name: DeleteAllFlightSeats :many
 DELETE FROM flight_seats 
@@ -42,6 +29,6 @@ RETURNING flight_seats.seat_id::int;
 
 -- name: GetReservationSeats :many
 SELECT seat_type, row, col 
-FROM reservation_seats
-JOIN seats ON reservation_seats.seat_id = seats.seat_id
+FROM flight_seats
+JOIN seats ON flight_seats.seat_id = seats.seat_id
 WHERE reservation_id = @reservation_id::int;

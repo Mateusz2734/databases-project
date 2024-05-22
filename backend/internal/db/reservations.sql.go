@@ -12,17 +12,16 @@ import (
 )
 
 const addReservation = `-- name: AddReservation :one
-INSERT INTO reservations (flight_id, firstname, lastname, email, reservation_datetime, status)
-VALUES ($1::int, $2, $3, $4, NOW(), $5)
-RETURNING reservation_id, flight_id, firstname, lastname, email, reservation_datetime, status
+INSERT INTO reservations (flight_id, firstname, lastname, email, reservation_datetime)
+VALUES ($1::int, $2, $3, $4, NOW())
+RETURNING reservation_id, flight_id, firstname, lastname, email, reservation_datetime
 `
 
 type AddReservationParams struct {
-	FlightID  int32                 `json:"flight_id"`
-	Firstname string                `json:"firstname"`
-	Lastname  string                `json:"lastname"`
-	Email     string                `json:"email"`
-	Status    NullReservationStatus `json:"status"`
+	FlightID  int32  `json:"flight_id"`
+	Firstname string `json:"firstname"`
+	Lastname  string `json:"lastname"`
+	Email     string `json:"email"`
 }
 
 func (q *Queries) AddReservation(ctx context.Context, db DBTX, arg AddReservationParams) (Reservation, error) {
@@ -31,7 +30,6 @@ func (q *Queries) AddReservation(ctx context.Context, db DBTX, arg AddReservatio
 		arg.Firstname,
 		arg.Lastname,
 		arg.Email,
-		arg.Status,
 	)
 	var i Reservation
 	err := row.Scan(
@@ -41,7 +39,6 @@ func (q *Queries) AddReservation(ctx context.Context, db DBTX, arg AddReservatio
 		&i.Lastname,
 		&i.Email,
 		&i.ReservationDatetime,
-		&i.Status,
 	)
 	return i, err
 }
@@ -56,7 +53,7 @@ func (q *Queries) DeleteReservation(ctx context.Context, db DBTX, reservationID 
 }
 
 const getCustomerReservations = `-- name: GetCustomerReservations :many
-SELECT reservations.reservation_id, reservations.flight_id, reservations.firstname, reservations.lastname, reservations.email, reservations.reservation_datetime, reservations.status, 
+SELECT reservations.reservation_id, reservations.flight_id, reservations.firstname, reservations.lastname, reservations.email, reservations.reservation_datetime, 
     flights.departure_airport, 
     flights.arrival_airport,
     flights.departure_datetime
@@ -97,7 +94,6 @@ func (q *Queries) GetCustomerReservations(ctx context.Context, db DBTX, arg GetC
 			&i.Reservation.Lastname,
 			&i.Reservation.Email,
 			&i.Reservation.ReservationDatetime,
-			&i.Reservation.Status,
 			&i.DepartureAirport,
 			&i.ArrivalAirport,
 			&i.DepartureDatetime,
@@ -113,7 +109,7 @@ func (q *Queries) GetCustomerReservations(ctx context.Context, db DBTX, arg GetC
 }
 
 const getReservationByID = `-- name: GetReservationByID :one
-SELECT reservations.reservation_id, reservations.flight_id, reservations.firstname, reservations.lastname, reservations.email, reservations.reservation_datetime, reservations.status, flights.flight_id, flights.departure_airport, flights.arrival_airport, flights.departure_datetime, flights.arrival_datetime, flights.airplane_id, flights.price
+SELECT reservations.reservation_id, reservations.flight_id, reservations.firstname, reservations.lastname, reservations.email, reservations.reservation_datetime, flights.flight_id, flights.departure_airport, flights.arrival_airport, flights.departure_datetime, flights.arrival_datetime, flights.airplane_id, flights.price
 FROM reservations 
 JOIN flights ON reservations.flight_id = flights.flight_id
 WHERE reservation_id = $1::int
@@ -134,7 +130,6 @@ func (q *Queries) GetReservationByID(ctx context.Context, db DBTX, reservationID
 		&i.Reservation.Lastname,
 		&i.Reservation.Email,
 		&i.Reservation.ReservationDatetime,
-		&i.Reservation.Status,
 		&i.Flight.FlightID,
 		&i.Flight.DepartureAirport,
 		&i.Flight.ArrivalAirport,

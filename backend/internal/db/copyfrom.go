@@ -9,39 +9,6 @@ import (
 	"context"
 )
 
-// iteratorForAddReservationSeats implements pgx.CopyFromSource.
-type iteratorForAddReservationSeats struct {
-	rows                 []AddReservationSeatsParams
-	skippedFirstNextCall bool
-}
-
-func (r *iteratorForAddReservationSeats) Next() bool {
-	if len(r.rows) == 0 {
-		return false
-	}
-	if !r.skippedFirstNextCall {
-		r.skippedFirstNextCall = true
-		return true
-	}
-	r.rows = r.rows[1:]
-	return len(r.rows) > 0
-}
-
-func (r iteratorForAddReservationSeats) Values() ([]interface{}, error) {
-	return []interface{}{
-		r.rows[0].ReservationID,
-		r.rows[0].SeatID,
-	}, nil
-}
-
-func (r iteratorForAddReservationSeats) Err() error {
-	return nil
-}
-
-func (q *Queries) AddReservationSeats(ctx context.Context, db DBTX, arg []AddReservationSeatsParams) (int64, error) {
-	return db.CopyFrom(ctx, []string{"reservation_seats"}, []string{"reservation_id", "seat_id"}, &iteratorForAddReservationSeats{rows: arg})
-}
-
 // iteratorForReserveFlightSeats implements pgx.CopyFromSource.
 type iteratorForReserveFlightSeats struct {
 	rows                 []ReserveFlightSeatsParams
