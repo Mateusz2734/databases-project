@@ -1,46 +1,69 @@
-# Getting Started with Create React App
+# Frontend
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+### Prerequisites
 
-### `npm start`
+- Node.js (version 14.x or later)
+- npm (Node Package Manager, usually installed with Node.js)
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+---
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+### Install dependencies:
 
-### `npm test`
+Inside the project directory, run the following command to install all dependencies:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```
+npm install
+```
 
-### `npm run build`
+This will install all the necessary packages listed in the package.json file.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+---
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### (Optional) Fix dependency issues:
+If there are dependency issues after installing, you can try fixing them:
+```
+npm audit fix --force
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+---
 
-### `npm run eject`
+### Running the Frontend
+Once you've installed the dependencies, you can run the frontend:
+```
+npm start
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+---
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Frontend Overview
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+- #### Home Page
+    Main page where users can choose their next actions.
+    ![Home Page](docs/home.png)
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+- #### Flight Search
+    Page with simple inputs for specifying flight criteria.
+    ![Search Flights](docs/searchflights.png)
 
-## Learn More
+- #### Sample Searched Flights
+    ![Example Flights](docs/exampleflights.png)
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- #### Flight Specification
+    After selecting a flight, users are presented with a seating arrangement and a cart for selecting seats.
+    ![Seat Chart](docs/seatchart.png)
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- #### Flight Details
+    Page displaying basic information about the selected flight and seats. Users can confirm their reservation after providing necessary details.
+    ![Reservation](docs/reservation.png)
+
+- #### Manage Reservation Page
+    Allows users to search and manage their reservations.
+    ![Manage Reservation](docs/managereservation.png)
+    
+- #### Reports Page
+    Provides statistics on flight income and popular destinations.
+    ![Reports Page](docs/reportspage.png)
