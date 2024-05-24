@@ -41,7 +41,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-SELECT create_enum_type_if_not_exists('reservation_status', ARRAY['''pending''', '''confirmed''', '''cancelled''']);
 SELECT create_enum_type_if_not_exists('seat_class', ARRAY['''economy''', '''business''', '''first_class''', '''economy_plus''']);
 
 CREATE TABLE IF NOT EXISTS "airports" (
@@ -73,15 +72,15 @@ CREATE TABLE IF NOT EXISTS "reservations" (
   "firstname" VARCHAR(50) NOT NULL,
   "lastname" VARCHAR(50) NOT NULL,
   "email" VARCHAR(100) NOT NULL,
-  "reservation_datetime" TIMESTAMP,
-  "status" reservation_status
+  "reservation_datetime" TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS "flight_seats" (
   "id" SERIAL PRIMARY KEY,
   "flight_id" INT,
   "seat_id" INT,
-  "created_at" TIMESTAMP DEFAULT NOW()
+  "created_at" TIMESTAMP DEFAULT NOW(),
+  "reservation_id" INT
 );
 
 CREATE TABLE IF NOT EXISTS "seats" (
@@ -90,12 +89,6 @@ CREATE TABLE IF NOT EXISTS "seats" (
   "seat_type" seat_class NOT NULL,
   "row" INT NOT NULL,
   "col" INT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS "reservation_seats" (
-  "id" SERIAL PRIMARY KEY,
-  "reservation_id" INT,
-  "seat_id" INT
 );
 
 CREATE TABLE IF NOT EXISTS "pricing" (
@@ -108,8 +101,7 @@ SELECT add_foreign_key_if_not_exists('flights', 'departure_airport', 'airports',
 SELECT add_foreign_key_if_not_exists('flights', 'arrival_airport', 'airports', 'airport_code');
 SELECT add_foreign_key_if_not_exists('flights', 'airplane_id', 'airplanes', 'airplane_id');
 SELECT add_foreign_key_if_not_exists('reservations', 'flight_id', 'flights', 'flight_id');
+SELECT add_foreign_key_if_not_exists('flight_seats', 'reservation_id', 'reservations', 'reservation_id');
 SELECT add_foreign_key_if_not_exists('flight_seats', 'seat_id', 'seats', 'seat_id');
 SELECT add_foreign_key_if_not_exists('flight_seats', 'flight_id', 'flights', 'flight_id');
 SELECT add_foreign_key_if_not_exists('seats', 'airplane_id', 'airplanes', 'airplane_id');
-SELECT add_foreign_key_if_not_exists('reservation_seats', 'reservation_id', 'reservations', 'reservation_id');
-SELECT add_foreign_key_if_not_exists('reservation_seats', 'seat_id', 'seats', 'seat_id');

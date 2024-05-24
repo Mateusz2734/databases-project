@@ -11,8 +11,8 @@ AND @lastname = lastname
 AND flights.departure_datetime > NOW();
 
 -- name: AddReservation :one
-INSERT INTO reservations (flight_id, firstname, lastname, email, reservation_datetime, status)
-VALUES (@flight_id::int, @firstname, @lastname, @email, NOW(), @status)
+INSERT INTO reservations (flight_id, firstname, lastname, email, reservation_datetime)
+VALUES (@flight_id::int, @firstname, @lastname, @email, NOW())
 RETURNING *;
 
 -- name: GetReservationByID :one

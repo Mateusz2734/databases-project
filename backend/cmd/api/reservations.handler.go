@@ -110,10 +110,6 @@ func (app *application) createReservation(w http.ResponseWriter, r *http.Request
 		Firstname: input.Firstname,
 		Lastname:  input.Lastname,
 		Email:     input.Email,
-		Status: db.NullReservationStatus{
-			ReservationStatus: db.ReservationStatusConfirmed,
-			Valid:             true,
-		},
 	}
 	reservation, err := app.db.AddReservation(r.Context(), tx, params1)
 	if err != nil {
@@ -123,25 +119,10 @@ func (app *application) createReservation(w http.ResponseWriter, r *http.Request
 
 	seatsParams := make([]db.AddReservationSeatsParams, 0, len(seatIDs))
 	for _, seatID := range seatIDs {
-		seatsParams = append(seatsParams, db.AddReservationSeatsParams{ReservationID: reservation.ReservationID, SeatID: seatID})
+		seatsParams = append(seatsParams, db.AddReservationSeatsParams{ReservationID: reservation.ReservationID, FlightID: flight.FlightID, SeatID: seatID})
 	}
 
 	_, err = app.db.AddReservationSeats(r.Context(), tx, seatsParams)
-	if err != nil {
-		app.serverError(w, r, err)
-		return
-	}
-
-	reserveParams := make([]db.ReserveFlightSeatsParams, 0, len(seatIDs))
-
-	for _, seatID := range seatIDs {
-		reserveParams = append(reserveParams, db.ReserveFlightSeatsParams{
-			FlightID: input.FlightID,
-			SeatID:   seatID,
-		})
-	}
-
-	_, err = app.db.ReserveFlightSeats(r.Context(), tx, reserveParams)
 	if err != nil {
 		app.serverError(w, r, err)
 		return
@@ -239,12 +220,6 @@ func (app *application) editReservation(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	params2 := db.DeleteFlightSeatsParams{SeatIds: seatIDs, FlightID: reservation.FlightID.Int32}
-	if err = app.db.DeleteFlightSeats(r.Context(), tx, params2); err != nil {
-		app.serverError(w, r, err)
-		return
-	}
-
 	if err = tx.Commit(r.Context()); err != nil {
 		app.serverError(w, r, err)
 		return
@@ -289,14 +264,8 @@ func (app *application) deleteReservation(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	deleted, err := app.db.DeleteAllReservationSeats(r.Context(), tx, reservation.ReservationID)
+	_, err = app.db.DeleteAllReservationSeats(r.Context(), tx, reservation.ReservationID)
 	if err != nil {
-		app.serverError(w, r, err)
-		return
-	}
-
-	params := db.DeleteFlightSeatsParams{SeatIds: deleted, FlightID: reservation.FlightID.Int32}
-	if err = app.db.DeleteFlightSeats(r.Context(), tx, params); err != nil {
 		app.serverError(w, r, err)
 		return
 	}
