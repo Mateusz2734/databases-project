@@ -58,7 +58,7 @@ export default function UpdateReservation() {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ seats: toDelete })
+                body: JSON.stringify({ seats: toDelete, type: 'remove' })
             });
 
             if (response.ok) {

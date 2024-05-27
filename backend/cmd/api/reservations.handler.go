@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -142,10 +143,11 @@ func (app *application) createReservation(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// Removes some seats from reservation
 func (app *application) editReservation(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Seats []db.SeatPlacement `json:"seats"`
+		Seats     []db.SeatPlacement  `json:"seats"`
+		Type      string              `json:"type"`
+		validator validator.Validator `json:"-"`
 	}
 
 	reservationID := flow.Param(r.Context(), "id")
@@ -165,8 +167,11 @@ func (app *application) editReservation(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if len(input.Seats) == 0 {
-		app.badRequest(w, r, fmt.Errorf("missing seats"))
+	input.validator.Check(input.Type == "add" || input.Type == "remove", "Invalid operation type")
+	input.validator.Check(len(input.Seats) > 0, "Missing seats")
+
+	if input.validator.HasErrors() {
+		app.failedValidation(w, r, input.validator)
 		return
 	}
 
@@ -195,13 +200,21 @@ func (app *application) editReservation(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	reservationFlight, err := app.db.GetFlightById(r.Context(), tx, reservation.FlightID.Int32)
+	flight, err := app.db.GetFlightById(r.Context(), tx, reservation.FlightID.Int32)
 	if err != nil {
-		app.serverError(w, r, err)
+		app.notFound(w, r)
 		return
 	}
 
-	allSeats, err := app.db.GetSeatIDs(r.Context(), tx, db.GetSeatIDsParams{Rows: rows, Cols: cols, AirplaneID: reservationFlight.AirplaneID.Int32})
+	input.validator.Clear()
+	input.validator.Check(flight.DepartureDatetime.Time.After(time.Now()), "Flight has already departed")
+
+	if input.validator.HasErrors() {
+		app.failedValidation(w, r, input.validator)
+		return
+	}
+
+	allSeats, err := app.db.GetSeatIDs(r.Context(), tx, db.GetSeatIDsParams{Rows: rows, Cols: cols, AirplaneID: flight.AirplaneID.Int32})
 	if err != nil && err != pgx.ErrNoRows {
 		app.serverError(w, r, err)
 		return
@@ -214,9 +227,24 @@ func (app *application) editReservation(w http.ResponseWriter, r *http.Request) 
 		seatIDs = append(seatIDs, seat.SeatID)
 	}
 
-	params1 := db.DeleteReservationSeatsParams{ReservationID: int32(reservationIDint), SeatIds: seatIDs}
-	if err = app.db.DeleteReservationSeats(r.Context(), tx, params1); err != nil {
-		app.serverError(w, r, err)
+	if len(seatIDs) != len(input.Seats) {
+		msg := map[string]string{"message": "Some seats do not exist"}
+		response.JSON(w, http.StatusNotFound, msg)
+		return
+	}
+
+	var code int
+	var message string
+	if input.Type == "add" {
+		code, err = app.addSeats(r.Context(), &tx, reservation.ReservationID, reservation.FlightID.Int32, seatIDs, allSeats)
+		message = "Seats added to reservation"
+	} else {
+		code, err = app.deleteSeats(r.Context(), &tx, reservation.ReservationID, seatIDs)
+		message = "Seats removed from reservation"
+	}
+
+	if err != nil {
+		app.errorMessage(w, r, code, err.Error(), nil)
 		return
 	}
 
@@ -225,7 +253,7 @@ func (app *application) editReservation(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	msg := map[string]string{"message": "Seats removed from reservation"}
+	msg := map[string]string{"message": message}
 	if err = response.JSON(w, http.StatusOK, msg); err != nil {
 		app.serverError(w, r, err)
 	}
@@ -363,4 +391,38 @@ func (app *application) getClientReservations(w http.ResponseWriter, r *http.Req
 	if err = response.JSON(w, http.StatusOK, data); err != nil {
 		app.serverError(w, r, err)
 	}
+}
+
+func (app *application) deleteSeats(ctx context.Context, tx *pgx.Tx, reservationID int32, seatIDs []int32) (int, error) {
+	params := db.DeleteReservationSeatsParams{ReservationID: reservationID, SeatIds: seatIDs}
+	if err := app.db.DeleteReservationSeats(ctx, *tx, params); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
+}
+
+func (app *application) addSeats(ctx context.Context, tx *pgx.Tx, reservationID, flightID int32, seatIDs []int32, allSeats []db.Seat) (int, error) {
+	unavailableIDs, err := app.db.CheckIfUnavailable(ctx, *tx, db.CheckIfUnavailableParams{SeatIds: seatIDs, FlightID: flightID})
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	unavailableSeats := misc.FindUnavailable(unavailableIDs, allSeats)
+
+	if len(unavailableSeats) > 0 {
+		return http.StatusConflict, fmt.Errorf("some seats are unavailable")
+	}
+
+	seatsParams := make([]db.AddReservationSeatsParams, 0, len(seatIDs))
+	for _, seatID := range seatIDs {
+		seatsParams = append(seatsParams, db.AddReservationSeatsParams{ReservationID: reservationID, FlightID: flightID, SeatID: seatID})
+	}
+
+	_, err = app.db.AddReservationSeats(ctx, *tx, seatsParams)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
 }
