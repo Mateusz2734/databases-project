@@ -35,7 +35,7 @@ export default function ReservationDetailsPage() {
     };
 
     const handleCancelClick = async () => {
-        const confirmCancel = window.confirm("Are you sure you want to cancel the reservation?");
+        const confirmCancel = window.confirm("Are you sure you want to delete the reservation?");
         if (confirmCancel) {
             try {
                 const response = await fetch(`http://localhost:4444/reservations/${id}`, {
@@ -43,14 +43,14 @@ export default function ReservationDetailsPage() {
                 });
 
                 if (response.ok) {
-                    window.alert('Reservation cancelled successfully!');
+                    window.alert('Reservation deleted successfully!');
                     navigate('/');
                 } else {
-                    throw new Error('Error cancelling reservation');
+                    throw new Error('Error deleting reservation');
                 }
             } catch (error) {
-                console.error('Error cancelling reservation:', error);
-                window.alert('Error cancelling reservation. Please try again later.');
+                console.error('Error deleting reservation:', error);
+                window.alert('Error deleting reservation. Please try again later.');
             }
         }
     };
@@ -91,7 +91,7 @@ export default function ReservationDetailsPage() {
                     ))}
                 </tbody>
             </table>
-            <button style={{ marginRight: 10 }} onClick={handleCancelClick} type="submit">Cancel Reservation</button>
+            <button style={{ marginRight: 10 }} onClick={handleCancelClick} type="submit">Delete Reservation</button>
             <button onClick={handleUpdateClick} type="submit">Change Reservation</button>
         </div>
     );

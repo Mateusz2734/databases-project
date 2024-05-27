@@ -49,7 +49,7 @@ export default function UpdateReservation() {
         }
 
         if (toDelete.length === seats.length) {
-            window.alert('Cannot remove all seats from a reservation. Please cancel the reservation instead.');
+            window.alert('Cannot remove all seats from a reservation. Please delete the reservation instead.');
             return;
         }
         try {

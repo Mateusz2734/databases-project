@@ -5,7 +5,7 @@ export function ReservationCard({ reservation, departure_airport, arrival_airpor
     const navigate = useNavigate();
 
     const handleCancelClick = async () => {
-        const confirmCancel = window.confirm("Are you sure you want to cancel the reservation?");
+        const confirmCancel = window.confirm("Are you sure you want to delete the reservation?");
         if (confirmCancel) {
             try {
                 const response = await fetch(`http://localhost:4444/reservations/${reservation.reservation_id}`, {
@@ -13,14 +13,14 @@ export function ReservationCard({ reservation, departure_airport, arrival_airpor
                 });
 
                 if (response.ok) {
-                    window.alert('Reservation cancelled successfully!');
+                    window.alert('Reservation deleted successfully!');
                     navigate('/');
                 } else {
-                    throw new Error('Error cancelling reservation');
+                    throw new Error('Error deleting reservation');
                 }
             } catch (error) {
-                console.error('Error cancelling reservation:', error);
-                window.alert('Error cancelling reservation. Please try again later.');
+                console.error('Error deleting reservation:', error);
+                window.alert('Error deleting reservation. Please try again later.');
             }
         }
     };
@@ -31,7 +31,7 @@ export function ReservationCard({ reservation, departure_airport, arrival_airpor
             <p>Departures at {new Date(departure_datetime).toLocaleString()}</p>
             <p>Reserved at {new Date(reservation.reservation_datetime).toLocaleString()}</p>
             <button onClick={handleCancelClick} style={{ marginRight: 5 }}>
-                Cancel reservation
+                Delete reservation
             </button>
             <button onClick={() => navigate(`/reservations/${reservation.reservation_id}`)}>
                 More details
