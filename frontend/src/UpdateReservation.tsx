@@ -2,13 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DataGrid, GridColDef, GridRowId } from '@mui/x-data-grid';
 
-import { Seat, Reservation } from './types';
-import './css/FlightFinder.css';
+import { Seat, Reservation, SeatPlacement } from './types';
 
-type SeatPlacement = {
-    row: number;
-    col: number;
-};
+import './css/FlightFinder.css';
 
 export default function UpdateReservation() {
     const { id } = useParams();
