@@ -54,13 +54,11 @@ export default function FlightDetailsPage() {
         const button = refCurrent?.element.querySelector('.sc-cart-btn.sc-cart-btn-submit');
 
         if (button) {
-            console.log("Adding event listener");
             button.addEventListener('click', handleClick);
         }
 
         return () => {
             if (button) {
-                console.log("Removing event listener");
                 button.removeEventListener('click', handleClick);
             }
         };

@@ -31,7 +31,7 @@ export default function ReservationDetailsPage() {
     }, [id]);
 
     const handleUpdateClick = () => {
-        navigate(`/reservations/${id}/update`);
+        navigate(`/reservations/${id}/update/remove`);
     };
 
     const handleCancelClick = async () => {

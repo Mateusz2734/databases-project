@@ -116,8 +116,8 @@ const ReservationConfirm: React.FC = () => {
                     <p>Flight ID: {flightDetails.flight_id}</p>
                     <p>Departure: {flightDetails.departure_airport}</p>
                     <p>Arrival: {flightDetails.arrival_airport}</p>
-                    <p>Departure Time: {flightDetails.departure_datetime}</p>
-                    <p>Arrival Time: {flightDetails.arrival_datetime}</p>
+                    <p>Departure Time: {new Date(flightDetails.departure_datetime).toLocaleString()}</p>
+                    <p>Arrival Time: {new Date(flightDetails.arrival_datetime).toLocaleString()}</p>
                 </>
             )}
 

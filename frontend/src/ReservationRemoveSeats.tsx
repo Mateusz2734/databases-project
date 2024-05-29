@@ -6,7 +6,7 @@ import { Seat, Reservation, SeatPlacement } from './types';
 
 import './css/FlightFinder.css';
 
-export default function UpdateReservation() {
+export default function ReservationRemoveSeats() {
     const { id } = useParams();
     const navigate = useNavigate();
 
