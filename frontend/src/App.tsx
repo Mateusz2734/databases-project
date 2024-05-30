@@ -1,13 +1,16 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
+import HomePage from './HomePage';
+import ReportsPage from './ReportsPage';
 import FlightFinder from './FlightFinder';
 import FlightDetailsPage from './FlightDetailsPage';
-import './css/App.css';
-import ReservationConfirm from './ReservationConfirm';
-import ReportsPage from './ReportsPage';
-import ReservationRemoveSeats from './ReservationRemoveSeats';
 import ReservationFinder from './ReservationFinder';
+import ReservationConfirm from './ReservationConfirm';
+import ReservationAddSeats from './ReservationAddSeats';
 import ReservationDetails from './ReservationDetailsPage';
-import HomePage from './HomePage';
+import ReservationRemoveSeats from './ReservationRemoveSeats';
+
+import './css/App.css';
 
 const App: React.FC = () => {
     return (
@@ -21,6 +24,7 @@ const App: React.FC = () => {
                 <Route path="/reservations" element={<ReservationFinder />} />
                 <Route path="/reservations/:id" element={<ReservationDetails />} />
                 <Route path="/reservations/:id/update/remove" element={<ReservationRemoveSeats />} />
+                <Route path="/reservations/:id/update/add" element={<ReservationAddSeats />} />
             </Routes>
         </Router>
     );

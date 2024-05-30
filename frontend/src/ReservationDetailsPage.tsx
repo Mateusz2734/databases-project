@@ -30,8 +30,12 @@ export default function ReservationDetailsPage() {
         getReservationData();
     }, [id]);
 
-    const handleUpdateClick = () => {
+    const handleRemoveClick = () => {
         navigate(`/reservations/${id}/update/remove`);
+    };
+
+    const handleAddClick = () => {
+        navigate(`/reservations/${id}/update/add`, { state: { flightID: flight?.flight_id } });
     };
 
     const handleCancelClick = async () => {
@@ -92,7 +96,8 @@ export default function ReservationDetailsPage() {
                 </tbody>
             </table>
             <button style={{ marginRight: 10 }} onClick={handleCancelClick} type="submit">Delete Reservation</button>
-            <button onClick={handleUpdateClick} type="submit">Change Reservation</button>
+            <button style={{ marginRight: 10 }} onClick={handleRemoveClick} type="submit">Remove some seats</button>
+            <button onClick={handleAddClick} type="submit">Add new seats</button>
         </div>
     );
 }
