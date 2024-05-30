@@ -154,6 +154,10 @@ make run/live
       "price": "New Price"
     }
 
+- **DELETE** `/flights/:id`
+  - Deletes a specific flight.
+  - **Query Parameters:** none
+
 - **GET** `/reservations`
   - Retrieves all reservations of the client.
   - **Query Parameters:**

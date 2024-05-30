@@ -24,6 +24,7 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("/flights", app.createFlight, "POST")
 	mux.HandleFunc("/flights/:id", app.getFlightData, "GET")
 	mux.HandleFunc("/flights/:id", app.editFlight, "PATCH")
+	mux.HandleFunc("/flights/:id", app.deleteFlight, "DELETE")
 
 	mux.HandleFunc("/reservations", app.getClientReservations, "GET")
 	mux.HandleFunc("/reservations", app.createReservation, "POST")
