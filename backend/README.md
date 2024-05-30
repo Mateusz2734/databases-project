@@ -263,10 +263,12 @@ make run/live
   - **Query Parameters:** none
 
 - **PATCH** `/reservations/:id`
-  - Removes `seats` from a specified reservation.
+  - Removes `seats` from a specified reservation or adds new ones.
   - **Request Body:**
+    **NOTE**: Type must be either `add` or `remove`.
     ```json
     {
+      "type": "add",
       "seats": [
         {
           "row": 1,
