@@ -63,6 +63,10 @@ npm start
 - #### Manage Reservation Page
     Allows users to search and manage their reservations.
     ![Manage Reservation](docs/managereservation.png)
+
+- #### Reservation options
+    Allows users to delete reservation and edit reservation seats.
+    ![Manage Reservation](docs/reservationoptions.png)
     
 - #### Reports Page
     Provides statistics on flight income and popular destinations.

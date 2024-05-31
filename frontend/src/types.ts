@@ -77,3 +77,34 @@ export interface Seat {
   row: number;
   col: number;
 }
+
+export interface SeatType {
+  label: string;
+  cssClass: string;
+  price: number;
+  seatRows?: number[];
+}
+
+export type SeatPlacement = {
+  row: number;
+  col: number;
+};
+
+export type FlightData = {
+  flight: Flight;
+  plane: {
+    airplane_id: number;
+    airplane_model: string;
+    diagram_metadata: {
+      rows: number;
+      columns: number;
+      rowSpacers: number[];
+      columnSpacers: number[];
+      disabledSeats: Seat[];
+      seatTypes: {
+        [key: string]: SeatType;
+      };
+    };
+  };
+  reserved: SeatPlacement[];
+};

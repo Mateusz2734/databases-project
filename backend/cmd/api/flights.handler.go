@@ -251,3 +251,52 @@ func (app *application) editFlight(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, r, err)
 	}
 }
+
+func (app *application) deleteFlight(w http.ResponseWriter, r *http.Request) {
+	flightId := flow.Param(r.Context(), "id")
+	if flightId == "" {
+		app.badRequest(w, r, fmt.Errorf("flightID not provided"))
+		return
+	}
+
+	flightIDint, err := strconv.ParseInt(flightId, 10, 32)
+	if err != nil {
+		app.badRequest(w, r, err)
+		return
+	}
+
+	tx, err := app.db.BeginTx(r.Context(), pgx.TxOptions{})
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+	defer tx.Rollback(r.Context())
+
+	_, err = app.db.GetFlightById(r.Context(), tx, int32(flightIDint))
+	if err != nil && err != pgx.ErrNoRows {
+		app.serverError(w, r, err)
+		return
+	}
+
+	if err == pgx.ErrNoRows {
+		response.JSON(w, http.StatusNotFound, map[string]interface{}{
+			"message": "Flight not found",
+		})
+		return
+	}
+
+	if err := app.db.DeleteFlight(r.Context(), tx, int32(flightIDint)); err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	if err := tx.Commit(r.Context()); err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	msg := map[string]string{"message": "Flight deleted successfully"}
+	if err := response.JSON(w, http.StatusOK, msg); err != nil {
+		app.serverError(w, r, err)
+	}
+}

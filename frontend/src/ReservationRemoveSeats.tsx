@@ -2,15 +2,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DataGrid, GridColDef, GridRowId } from '@mui/x-data-grid';
 
-import { Seat, Reservation } from './types';
+import { Seat, Reservation, SeatPlacement } from './types';
+
 import './css/FlightFinder.css';
 
-type SeatPlacement = {
-    row: number;
-    col: number;
-};
-
-export default function UpdateReservation() {
+export default function ReservationRemoveSeats() {
     const { id } = useParams();
     const navigate = useNavigate();
 
@@ -49,7 +45,7 @@ export default function UpdateReservation() {
         }
 
         if (toDelete.length === seats.length) {
-            window.alert('Cannot remove all seats from a reservation. Please cancel the reservation instead.');
+            window.alert('Cannot remove all seats from a reservation. Please delete the reservation instead.');
             return;
         }
         try {
@@ -58,7 +54,7 @@ export default function UpdateReservation() {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ seats: toDelete })
+                body: JSON.stringify({ seats: toDelete, type: 'remove' })
             });
 
             if (response.ok) {

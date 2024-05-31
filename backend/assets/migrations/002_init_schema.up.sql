@@ -19,7 +19,8 @@ CREATE OR REPLACE FUNCTION add_foreign_key_if_not_exists(
     tname text,
     cname text,
     foreign_tname text,
-    foreign_cname text
+    foreign_cname text,
+    cascade boolean DEFAULT false
 ) RETURNS void AS
 $$
 DECLARE
@@ -36,7 +37,8 @@ BEGIN
     IF NOT constraint_exists THEN
         EXECUTE 'ALTER TABLE ' || tname || ' ADD CONSTRAINT ' ||
                 const_name || ' FOREIGN KEY (' || cname || ') ' ||
-                ' REFERENCES ' || foreign_tname || ' (' || foreign_cname || ')';
+                ' REFERENCES ' || foreign_tname || ' (' || foreign_cname || ')' ||
+                CASE WHEN cascade THEN ' ON DELETE CASCADE' ELSE '' END;
     END IF;
 END;
 $$ LANGUAGE plpgsql;
@@ -100,8 +102,8 @@ CREATE TABLE IF NOT EXISTS "pricing" (
 SELECT add_foreign_key_if_not_exists('flights', 'departure_airport', 'airports', 'airport_code');
 SELECT add_foreign_key_if_not_exists('flights', 'arrival_airport', 'airports', 'airport_code');
 SELECT add_foreign_key_if_not_exists('flights', 'airplane_id', 'airplanes', 'airplane_id');
-SELECT add_foreign_key_if_not_exists('reservations', 'flight_id', 'flights', 'flight_id');
+SELECT add_foreign_key_if_not_exists('reservations', 'flight_id', 'flights', 'flight_id', true);
 SELECT add_foreign_key_if_not_exists('flight_seats', 'reservation_id', 'reservations', 'reservation_id');
 SELECT add_foreign_key_if_not_exists('flight_seats', 'seat_id', 'seats', 'seat_id');
-SELECT add_foreign_key_if_not_exists('flight_seats', 'flight_id', 'flights', 'flight_id');
+SELECT add_foreign_key_if_not_exists('flight_seats', 'flight_id', 'flights', 'flight_id', true);
 SELECT add_foreign_key_if_not_exists('seats', 'airplane_id', 'airplanes', 'airplane_id');

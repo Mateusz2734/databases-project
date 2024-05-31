@@ -154,6 +154,10 @@ make run/live
       "price": "New Price"
     }
 
+- **DELETE** `/flights/:id`
+  - Deletes a specific flight.
+  - **Query Parameters:** none
+
 - **GET** `/reservations`
   - Retrieves all reservations of the client.
   - **Query Parameters:**
@@ -263,10 +267,12 @@ make run/live
   - **Query Parameters:** none
 
 - **PATCH** `/reservations/:id`
-  - Removes `seats` from a specified reservation.
+  - Removes `seats` from a specified reservation or adds new ones.
   - **Request Body:**
+    **NOTE**: Type must be either `add` or `remove`.
     ```json
     {
+      "type": "add",
       "seats": [
         {
           "row": 1,
