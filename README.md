@@ -14,7 +14,7 @@
 
 ---
 
-#### SQL logs
+#### Data base SQL schema 
 ```sql
 CREATE TYPE "reservation_status" AS ENUM (
   'pending',
@@ -107,6 +107,99 @@ ALTER TABLE "reservations" ADD FOREIGN KEY ("flight_id") REFERENCES "flights" ("
 
 ALTER TABLE "flights" ADD FOREIGN KEY ("airplane_id") REFERENCES "airplanes" ("airplane_id");
 
+```
+
+### Sample CRUD operations
+```sql
+-- name: AddFlight :exec
+INSERT INTO flights (departure_airport, arrival_airport, departure_datetime, arrival_datetime, airplane_id, price)
+VALUES (@departure_airport, @arrival_airport, @departure_datetime, @arrival_datetime, @airplane_id::int, @price);
+
+-- name: GetFlightById :one
+SELECT f.*
+FROM flights AS f
+WHERE f.flight_id = @flight_id;
+
+-- name: DeleteFlight :exec
+DELETE FROM flights
+WHERE flight_id = @flight_id;
+
+-- name: UpdateFlight :exec
+UPDATE flights
+SET departure_datetime = @departure_datetime, arrival_datetime = @arrival_datetime, price = @price
+WHERE flight_id = @flight_id;
+```
+
+### Transactional operations
+```sql
+-- name: AddReservation :one
+INSERT INTO reservations (flight_id, firstname, lastname, email, reservation_datetime)
+VALUES (@flight_id::int, @firstname, @lastname, @email, NOW())
+RETURNING *;
+
+-- name: DeleteReservation :exec
+DELETE FROM reservations WHERE reservation_id = @reservation_id::int;
+
+-- name: AddReservationSeats :copyfrom
+INSERT INTO flight_seats (flight_id, reservation_id, seat_id)
+VALUES (@flight_id::int, @reservation_id::int, @seat_id::int);
+
+-- name: DeleteReservationSeats :exec
+DELETE FROM flight_seats
+WHERE reservation_id = @reservation_id::int
+AND seat_id = ANY(sqlc.slice('seat_ids')::int[]);
+
+-- name: DeleteAllReservationSeats :many
+DELETE FROM flight_seats
+WHERE reservation_id = @reservation_id::int
+RETURNING seat_id::int;
+```
+Transactional operations also include read-only reporting operations.
+
+### Reporting operations
+```sql
+-- name: GetPopularFlights :many
+SELECT f.departure_airport, f.arrival_airport, COUNT(s.seat_id) as seat_count
+FROM flights f
+JOIN flight_seats s ON f.flight_id = s.flight_id AND departure_datetime BETWEEN @start_date::date AND @end_date::date
+GROUP BY f.departure_airport, f.arrival_airport
+ORDER BY seat_count DESC
+LIMIT @custom_limit::int;
+
+-- name: GetPopularDestinations :many
+SELECT f.arrival_airport, COUNT(s.seat_id) as seat_count
+FROM flights f
+JOIN flight_seats s ON f.flight_id = s.flight_id AND departure_datetime BETWEEN @start_date::date AND @end_date::date
+GROUP BY f.arrival_airport
+ORDER BY seat_count DESC
+LIMIT @custom_limit::int;
+
+-- name: GetTicketsSoldBetweenDates :one
+SELECT COUNT(seat_id) as seat_count
+FROM flight_seats
+WHERE created_at BETWEEN @start_date::date AND @end_date::date;
+
+-- name: GetTotalEarningsBetweenDates :many
+SELECT s.seat_type, 
+       SUM(f.price * p.value)::numeric AS value
+FROM seats s 
+INNER JOIN flight_seats fs ON s.seat_id = fs.seat_id 
+INNER JOIN flights f ON fs.flight_id = f.flight_id 
+INNER JOIN pricing p ON s.seat_type = p.seat_class
+WHERE fs.created_at BETWEEN @start_date::date AND @end_date::date
+GROUP BY s.seat_type;
+
+-- name: GetPeriodicEarningsBetweenDates :many
+SELECT 
+        GREATEST(DATE_TRUNC(@type, created_at), @start_date)::date AS period_start,
+        SUM(f.price * p.value)::numeric AS earnings
+FROM seats s 
+INNER JOIN flight_seats fs ON s.seat_id = fs.seat_id
+INNER JOIN flights f ON fs.flight_id = f.flight_id 
+INNER JOIN pricing p ON s.seat_type = p.seat_class
+WHERE created_at BETWEEN @start_date AND @end_date::date
+GROUP BY period_start
+ORDER BY period_start ASC;
 ```
 
 ---
