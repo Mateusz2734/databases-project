@@ -106,13 +106,13 @@ func (app *application) createReservation(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	params1 := db.AddReservationParams{
+	params := db.AddReservationParams{
 		FlightID:  input.FlightID,
 		Firstname: input.Firstname,
 		Lastname:  input.Lastname,
 		Email:     input.Email,
 	}
-	reservation, err := app.db.AddReservation(r.Context(), tx, params1)
+	reservation, err := app.db.AddReservation(r.Context(), tx, params)
 	if err != nil {
 		app.serverError(w, r, err)
 		return
