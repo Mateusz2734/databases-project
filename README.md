@@ -1,27 +1,32 @@
-# Data Bases project - flight reservation
+# Databases project - flight reservation
 ---
 ### Authors
 - Mateusz Wala
 - Piotr Andres
 ---
-### Used technologies
+### Used technologies and why we chose them
 - Database: **PostgreSQL**
-- Backend: **Go**
-- Frontend: **React**
+- Backend: **Go** + **sqlc**
+- Frontend: **TypeScript** + **React**
+
+**PostgreSQL** became our database of choice, because we had prior experience with it. Also it is widely used in the industry.
+
+**Go** was chosen as the backend language, because it is a statically typed, which makes it easier to catch errors at compile time. Moreover, it is really simple and fast, which makes it a great choice for backend services.
+
+**sqlc** is a tool that generates type-safe Go code from SQL queries. It simplifies the process of writing database access code and makes it less error-prone by checking for non-existing columns and relations, for example.
+
+**TypeScript**, being a compiled language, enabled us to write more robust code. It also has a lot of features that JavaScript lacks, like static typing, interfaces, enums, and more.
+
+**React** was chosen, because it is widely used in the industry and has a lot of libraries and tools that make development easier and faster. Also, we had prior experience with it. 
+
 ---
-### Data base structure
+### Database structure
 <img src="backend/docs/schema.png">
 
 ---
 
-#### Data base SQL schema 
+#### Database SQL schema 
 ```sql
-CREATE TYPE "reservation_status" AS ENUM (
-  'pending',
-  'confirmed',
-  'cancelled'
-);
-
 CREATE TYPE "seat_class" AS ENUM (
   'economy',
   'business',
@@ -58,15 +63,15 @@ CREATE TABLE "reservations" (
   "firstname" VARCHAR(50) NOT NULL,
   "lastname" VARCHAR(50) NOT NULL,
   "email" VARCHAR(100) NOT NULL,
-  "reservation_datetime" TIMESTAMP,
-  "status" reservation_status
+  "reservation_datetime" TIMESTAMP
 );
 
 CREATE TABLE "flight_seats" (
   "id" SERIAL PRIMARY KEY,
   "flight_id" INT,
   "seat_id" INT,
-  "created_at" TIMESTAMP DEFAULT NOW()
+  "reservation_id" INT,
+  "created_at" TIMESTAMP
 );
 
 CREATE TABLE "seats" (
@@ -77,21 +82,13 @@ CREATE TABLE "seats" (
   "col" INT NOT NULL
 );
 
-CREATE TABLE "reservation_seats" (
-  "id" SERIAL PRIMARY KEY,
-  "reservation_id" INT,
-  "seat_id" INT
-);
-
 CREATE TABLE "pricing" (
   "id" SERIAL PRIMARY KEY,
   "seat_class" seat_class NOT NULL,
   "value" DECIMAL(10,2) NOT NULL
 );
 
-ALTER TABLE "reservation_seats" ADD FOREIGN KEY ("reservation_id") REFERENCES "reservations" ("reservation_id");
-
-ALTER TABLE "reservation_seats" ADD FOREIGN KEY ("seat_id") REFERENCES "seats" ("seat_id");
+ALTER TABLE "flight_seats" ADD FOREIGN KEY ("reservation_id") REFERENCES "reservations" ("reservation_id");
 
 ALTER TABLE "flights" ADD FOREIGN KEY ("arrival_airport") REFERENCES "airports" ("airport_code");
 
@@ -106,10 +103,10 @@ ALTER TABLE "seats" ADD FOREIGN KEY ("airplane_id") REFERENCES "airplanes" ("air
 ALTER TABLE "reservations" ADD FOREIGN KEY ("flight_id") REFERENCES "flights" ("flight_id");
 
 ALTER TABLE "flights" ADD FOREIGN KEY ("airplane_id") REFERENCES "airplanes" ("airplane_id");
-
 ```
 
 ### Sample CRUD operations
+SQL queries for CRUD operations:
 ```sql
 -- name: AddFlight :exec
 INSERT INTO flights (departure_airport, arrival_airport, departure_datetime, arrival_datetime, airplane_id, price)
@@ -131,6 +128,7 @@ WHERE flight_id = @flight_id;
 ```
 
 ### Transactional operations
+SQL queries for smaller parts of transactional operations:
 ```sql
 -- name: AddReservation :one
 INSERT INTO reservations (flight_id, firstname, lastname, email, reservation_datetime)
@@ -154,9 +152,90 @@ DELETE FROM flight_seats
 WHERE reservation_id = @reservation_id::int
 RETURNING seat_id::int;
 ```
-Transactional operations also include read-only reporting operations.
+
+Here is the part of the code that is responsible for creating a new reservation. Whole code can be found in the `backend/cmp/api/reservations.handler.go` file: 
+```go
+tx, err := app.db.BeginTx(r.Context(), pgx.TxOptions{})
+if err != nil {
+  app.serverError(w, r, err)
+  return
+}
+defer tx.Rollback(r.Context())
+
+flight, err := app.db.GetFlightById(r.Context(), tx, input.FlightID)
+if err != nil && err != pgx.ErrNoRows {
+  app.serverError(w, r, err)
+  return
+}
+
+(...)
+
+if flight.DepartureDatetime.Time.Before(time.Now()) {
+  msg := map[string]string{"message": "Flight has already departed"}
+  response.JSON(w, http.StatusConflict, msg)
+  return
+}
+
+allSeats, err := app.db.GetSeatIDs(r.Context(), tx, db.GetSeatIDsParams{Rows: rows, Cols: cols, AirplaneID: flight.AirplaneID.Int32})
+if err != nil && err != pgx.ErrNoRows {
+  app.serverError(w, r, err)
+  return
+}
+
+(...)
+
+if len(seatIDs) != len(input.Seats) {
+  msg := map[string]string{"message": "Some seats do not exist"}
+  response.JSON(w, http.StatusNotFound, msg)
+  return
+}
+
+unavailableIDs, err := app.db.CheckIfUnavailable(r.Context(), tx, db.CheckIfUnavailableParams{SeatIds: seatIDs, FlightID: input.FlightID})
+if err != nil {
+  app.serverError(w, r, err)
+  return
+}
+
+unavailableSeats := misc.FindUnavailable(unavailableIDs, allSeats)
+if len(unavailableSeats) > 0 {
+    data := map[string]interface{}{
+      "message": "Some seats are unavailable",
+      "seats":   unavailableSeats,
+  }
+  if err = response.JSON(w, http.StatusConflict, data); err != nil {
+    app.serverError(w, r, err)
+  }
+  return
+}
+
+(...)
+
+reservation, err := app.db.AddReservation(r.Context(), tx, params)
+if err != nil {
+  app.serverError(w, r, err)
+  return
+}
+
+(...)
+
+_, err = app.db.AddReservationSeats(r.Context(), tx, seatsParams)
+if err != nil {
+  app.serverError(w, r, err)
+  return
+}
+
+if err = tx.Commit(r.Context()); err != nil {
+  app.serverError(w, r, err)
+  return
+}
+```
+
+
 
 ### Reporting operations
+When creating reports, we depend on read-only transactions. Code can be found in the `backend/cmp/api/reports.handler.go` file.
+
+SQL queries for reports:
 ```sql
 -- name: GetPopularFlights :many
 SELECT f.departure_airport, f.arrival_airport, COUNT(s.seat_id) as seat_count
